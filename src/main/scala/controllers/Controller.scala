@@ -8,20 +8,27 @@ trait Controller {
 
   /*
   Methode recuperant tous les elements reçus par une methode d'un controller, sous forme de map.
-  Elle identifie le controller, définit la methode du controller visée et lui envoie le map
+
    */
+
+  //TODO ne pas oublier la sécurité. Essayer de gerer ça façon GrailsFilter
 
   def receive(params: Map[String, String]) = {
     // recuperation du domain
     val domainName = params.get("httpdomain")
     if (domainName != None) {
-      // determination du controller
-      val controller = domainName.toString().capitalize + "Controller"
-
+      // determination du controller (nom relatif: package.nomClass)
+      val controller = "controllers." + domainName.toString().capitalize + "Controller"
 
       val specificAction = params.get("httpspecificaction")
+      //Si une action specifique a été demandée, elle prend le dessus sur les actions HTTP
       if (specificAction != None) {
-                   // TODO appeller la methode 'callMethod'
+        // TODO appeller la methode 'callMethod'
+      //  callMethod(controller, specificAction, params)
+      } else {
+        // Pas d'action specifique, donc action http
+
+
       }
 
 
@@ -44,10 +51,10 @@ trait Controller {
   /*
      http://stackoverflow.com/questions/2060395/is-there-any-scala-feature-that-allows-you-to-call-a-method-whose-name-is-stored
 
-     Methode qui instancie une classe (ici un controller) selon son nom relatif (package.nomClasse), puis qui invoque une méthode selon son nom envoyé en parametre en lui transmettant des parametres sous forme de Map
+     Methode qui instancie une classe (ici un controller) selon son nom relatif (package.nomClass), puis qui invoque une méthode selon son nom envoyé en parametre en lui transmettant des parametres sous forme de Map
    */
   def callMethod(className: String, methodName: String, argsMethod: Map[String, String]): Unit = {
-    val controllerInstance = createInstance(raw"controllers.$controller")
+    val controllerInstance = createInstance(className)
     val method = controllerInstance.getClass.getMethod(methodName, argsMethod.getClass)
     method.invoke(controllerInstance, argsMethod)
   }

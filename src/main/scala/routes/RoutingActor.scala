@@ -117,7 +117,7 @@ trait RoutingService extends HttpService {
                   parameterMap {
                     params => ctx => // on recupere le contexte global ainsi que les params sous forme de Map
                       detach() {
-                        //    Console.println("Get received : " + " path = " + url + " , entité = " + domainName + " , id= " + id + " , suffixe = " + rest + " , params= " + params)
+
 
                         Console.println(" GET request = " + ctx.request)
                         //                        Console.println(" GET request uri = " + ctx.request.uri)
@@ -130,13 +130,18 @@ trait RoutingService extends HttpService {
                         //                        Console.println(" GET request uri query= " + ctx.request.uri.query)
                         //                        Console.println(" GET ctx = " + ctx)
 
-                        val controller = domainName.toString().capitalize + "Controller"
-                        Console.println("controller = " + controller)
-                        //clazz = createInstance(domainName)
-
 
                         val map = httpToMap(ctx.request)
                         Console.println("GET MAP = " + map)
+                        var testmap =         map("httpparams")
+                        var mapdst: Map[String, String] = Map()
+                        Console.println("GET MAP = " + testmap)
+                        for(el <- testmap.split(";").toList){
+                          var list = el.split(":")
+                          mapdst += list(0) -> list(1)
+                        }
+                        Console.println("mapdst = " + mapdst)
+                        //TODO partout, retourner en erreur si: pas map.httpaction et httpactionspecific, pas map.httpcontroller
 
                         complete(raw"GET $domainName OK")
                       }
@@ -252,16 +257,18 @@ trait RoutingService extends HttpService {
     var contentMap: Map[String, String] = Map()
 
     // Ajout de la methode http
-    contentMap += "httpmethod" -> httpRequest.method.name
+    contentMap += "httpmethod" -> httpRequest.method.name // inutile
 
     // ajout des params (si existant)
     //Ex: 'http://127.0.0.1:8080/domain/searchAction?name=te&username=te&adresse=dakar' => name=te&username=te&adresse=dakar
     if (httpRequest.uri.query.nonEmpty) {
       val params = httpRequest.uri.query.toMap
       // on ajoute les params au map
+      var paramsString: String=""
       for (x <- params) {
-        contentMap = addToMap(x, contentMap)
+        paramsString += stringAsMap(x)
       }
+      contentMap += "httpparams" -> paramsString
     }
 
     // ajout du body (si existant, (POST, PUT))
@@ -280,13 +287,21 @@ trait RoutingService extends HttpService {
       // recup du domain
       //Ex: http://127.0.0.1:8080/domain => domain
       val domain = extractDomainFromPath(httpRequest.uri.path)
-      if (domain.isEmpty == false) contentMap += "httpdomain" -> domain
+      if (domain.isEmpty == false) {
+        //ajout du domain
+        contentMap += "httpdomain" -> domain //possiblement inutile
+
+        //ajout du controller
+        //le controller aura un nom relatif: package.nomClass= controllers.DomainController
+        val controller = "controllers." + domain.toString().capitalize + "Controller"
+        contentMap += "httpcontroller" -> controller
+      }
 
       //recuperarion de la methode specifique (si elle existe)
       //Ex: 'http://127.0.0.1:8080/domain/searchAction?name=te&username=te&adresse=dakar' => searchAction
       // Par convention, elle doit se terminer par 'Action'
-      val action = extractSpecificActionFromPath(httpRequest.uri.path)
-      if (action.isEmpty == false) contentMap += "httpspecificaction" -> action
+      val actionspecific = extractSpecificActionFromPath(httpRequest.uri.path)
+      if (actionspecific.isEmpty == false) contentMap += "httpactionspecific" -> actionspecific
 
       // recup de l'id
       val id = extractIdFromPath(httpRequest.uri.path)
@@ -297,8 +312,58 @@ trait RoutingService extends HttpService {
       if (tail.isEmpty == false) contentMap += "httptail" -> tail
     }
 
-    Console.println("contentMap = " + contentMap)
+    //determination de l'action de destination dans le controller
+    //Si une action specifique a été demandée (httpactionspecific), elle prend le dessus sur les actions HTTP (httpaction)
+    /*
+ Les actions sont, soit specifiée par la requete (en "dur"), soit "sous-entendue" par la methode http.
 
+ En dur: clé "httpspecificaction" du map. Si elle existe, elle a la priorité.
+ Sous-entendu: définie par la methode http (get, post, put, delete) et les params envoyés.
+
+   GET:
+     - si id envoyé, action << show >>
+     Ex: GET 'http://127.0.0.1:8080/users/20'
+     - si pas d'id, action << list >>
+     Ex: GET 'http://127.0.0.1:8080/users'
+
+   POST:
+     - si pas d'id, action << save >>
+     Ex: POST 'http://127.0.0.1:8080/users/' // avec le contenu dans le body de la requete
+     - si id envoyé, action << update >>
+     Ex: POST 'http://127.0.0.1:8080/users/20' // avec le contenu dans le body de la requete
+
+   PUT:
+     action << update >>
+     Ex: PUT 'http://127.0.0.1:8080/users/20' // avec le contenu dans le body de la requete
+
+   DELETE:
+     action << delete >>
+     Ex: DELETE 'http://127.0.0.1:8080/domain/id'
+  */
+    val actionspecific = contentMap.get("httpactionspecific")
+    val id = contentMap.get("id")
+    if (actionspecific == None) {
+      contentMap("httpmethod") match {
+        case "GET" => if (id != None) {
+          contentMap += "httpaction" -> "show"
+        } else {
+          contentMap += "httpaction" -> "list"
+        }
+        case "POST" => if (id != None) {
+          contentMap += "httpaction" -> "update"
+        } else {
+          contentMap += "httpaction" -> "save"
+        }
+        case "PUT" => if (id != None) {
+          contentMap += "httpaction" -> "update"
+        }
+        case "DELETE" => if (id != None) {
+          contentMap += "httpaction" -> "delete"
+        }
+      }
+    }
+
+    //Console.println("contentMap = " + contentMap)
 
     return contentMap
 
@@ -308,6 +373,10 @@ trait RoutingService extends HttpService {
   // methode qui ajoute un map à un autre map
   def addToMap(pair: (String, String), map: Map[String, String]): Map[String, String] = {
     map + (pair._1 -> pair._2)
+  }
+
+  def stringAsMap(pair: (String, String)): String ={
+    pair._1+":"+pair._2+";"
   }
 
 
@@ -420,6 +489,7 @@ Ex: /users/searchAction/43 => / (lorsque le params apres le domain se termine pa
     }
   }
 
+  // Check if a string is a number
   def isInteger(x: String): Boolean = {
     x.forall(_.isDigit)
   }

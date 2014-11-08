@@ -1,17 +1,17 @@
 package routes
 
 import akka.actor.Actor
-import controllers.Controller
 import models._
 import net.liftweb.json.Serialization._
 import net.liftweb.json._
+import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 import services.DbOperationService
 import spray.http._
 import spray.routing._
 import utilities.Failure
 
-class RoutingActor extends Actor with RoutingService {
+class RoutingOldVersionWorkingActor extends Actor with RoutingService {
 
   // the HttpService trait defines only one abstract member, which
   // connects the services environment to the enclosing actor or test
@@ -41,7 +41,7 @@ class RoutingActor extends Actor with RoutingService {
  *
  * Le controller permet l'acces au model (instanciation) ainsi que vers les differents services ou vers la bdd.
  * Il contient des actions, correspondant, soit à une methode HTTP, soit à des actions specifiques.
- * Methodes HTTP:
+ * Methodes HTPP:
  * Créer (create) => POST 'http://127.0.0.1:8080/domain/'
  * Afficher (read - list) => GET 'http://127.0.0.1:8080/domain/'
  * Afficher (read - show) => GET 'http://127.0.0.1:8080/domain/id'
@@ -58,7 +58,7 @@ class RoutingActor extends Actor with RoutingService {
  *
  **/
 
-trait RoutingService extends HttpService {
+trait RoutingOldVersionWorkingService extends HttpService {
   // we use the enclosing ActorContext's or ActorSystem's dispatcher for our Futures and Scheduler
   implicit def executionContext = actorRefFactory.dispatcher
 
@@ -91,37 +91,151 @@ trait RoutingService extends HttpService {
   }
 
 
-  //TODO inserer un logger (log4j ou autre)
-
   val fmt = DateTimeFormat.forPattern("yyMMddHHmmssSSS")
-  //possiblement inutile
   val testmanagementRoute = respondWithMediaType(MediaTypes.`application/json`) {
-    detach() {
-      ctx => // on recupere le contexte global
-        // On recupere l'ensemble des données contenues dans la requete et on les charge dans un map.
-        // Tout le reste de l'application ne manipulera que ce map
-        val httpmap = httpToMap(ctx.request)
-      //  Console.println("GET MAP = " + httpmap)
-        // On envoie httpmap au 'Controller Global'. Lui se chargera d'identifier le controller visé et de lui envoyer les données
 
-        // TODO gerer les valeurs retournées par Controller.receive
-        val controller = new Controller {}
-        controller.receive(httpmap)
+    pathExtract {
+      url => // on recupere le path de la requete qui est envoyée: Ex: localhost:8080/users
+        domainExtract(url.toString) {
+          domainName => //on recupere le modele: users par ex
+            //path(domainName / LongNumber ~ Slash.?) {
+            path(domainName / LongNumber ~ RestPath) {
+              (id, rest) =>
 
-        var domain = httpmap.get("httpdomain")
-        var method = httpmap.get("httpmethod").toString().toUpperCase()
-        //TODO partout, retourner en erreur si: pas httpmap.httpaction et httpactionspecific, pas httpmap.httpcontroller
-        //TODO gerer les erreurs avec customRejectionHandler
+                /**
+                 * Gere toute adresse commençant par /domain/id: /users/4, /users/2/userRoles ou encore /etudiant/2/inscriptionEtudiant/2?etab=1&etuId=2.
+                 *
+                 * Ex: /etudiant/2/inscriptionEtudiant/2?etab=1&etuId=2
+                 * domainName: etudiant;
+                 * id: 2;
+                 * rest: /inscriptionEtudiant/2;
+                 * params: Map(etab -> 1, etuId -> 2)
+                 **/
+                get {
+                  // une requete de type GET /domain/id ~ RestPath
+                  //La presence de l'id fait que l'on va vers une page 'show'
+                  parameterMap {
+                    params => ctx => // on recupere le contexte global ainsi que les params sous forme de Map
+                      detach() {
 
-        ctx.complete(raw"$method $domain OK  ")
+                        val map = httpToMap(ctx.request)
+                        Console.println("GET MAP = " + map)
+                        var testmap =         map("httpparams")
+                        var mapdst: Map[String, String] = Map()
+                        Console.println("GET MAP params = " + testmap)
+                        Console.println("GET MAP body = " + map.get("httpbody"))
+                        Console.println("httpparams = " + testmap.getClass())
+
+                        //TODO partout, retourner en erreur si: pas map.httpaction et httpactionspecific, pas map.httpcontroller
+
+                        complete(raw"GET $domainName OK")
+                      }
+
+
+                    //TODO on attaque DbOperationService pour recuperer ds la bdd l'enregistrement ac l'id envoyé
+
+                  }
+
+                } ~
+                  put {
+                    ctx => // une requete de type PUT/id: update de '/users/2'
+                      Console.println("Put entité = " + domainName + " , id= " + id)
+
+                      val map = httpToMap(ctx.request)
+                      Console.println("PUT MAP = " + map)
+                      ctx.complete(raw"PUT $domainName OK")
+
+                    //TODO on attaque le model envoyé (ou un service lié au model par convention) afin d'effectuer un update
+
+                  } ~
+                  delete {
+                    ctx => // une requete de type DELETE: delete de '/users/2'
+                      Console.println("DELETE entité = " + domainName + " , id= " + id)
+
+                      val map = httpToMap(ctx.request)
+                      Console.println("DELETE MAP = " + map)
+
+                      ctx.complete(raw"DELETE $domainName OK")
+
+                    //TODO on attaque le model envoyé (ou un service lié au model par convention) afin d'effectuer un delete
+
+                  }
+            } ~
+              path(domainName ~ RestPath) {
+                //gere '/user' && '/user/'
+                /**
+                 * Gere toute adresse commençant par /domain [sans id qui suive]: /users, /users/userRoles ou encore /etudiant/inscriptionEtudiant?etab=1&etuId=2.
+                 *
+                 * Ex: /etudiant/inscriptionEtudiant/2?etab=1&etuId=2
+                 * domainName: etudiant;
+                 * rest: /inscriptionEtudiant/2;
+                 * params: Map(etab -> 1, etuId -> 2)
+                 **/
+                rest =>
+                  get {
+                    ctx => //  GET /users/list
+                      Console.println("Get list = " + domainName + " , suffixe = " + rest + " , params= ")
+
+                      val map = httpToMap(ctx.request)
+                      Console.println("GET MAP = " + map)
+                      Console.println("GET MAP params = " + map.get("httpparams"))
+                      Console.println("GET MAP body = " + map.get("httpbody"))
+                      ctx.complete(raw"GET list $domainName OK")
+
+                    //TODO on attaque DbOperationService pour recuperer ds la bdd la liste du modele spécifié.
+                    //TODO ne pas oublier la pagination
+
+                  } ~
+                    post {
+                      ctx =>
+                        var clazz = createInstance("models.TestQuestion")
+                        // Console.println("Get received : " + " path = " + url + " , entité = " + domainName + " , suffixe = " + rest + " , request= " + ctx.request + " , request msg = "+ ctx.request.message + " , method = "+ctx.request.method+" , "+ctx.request.protocol+" , uri = "+ctx.request.uri+" , ctx = "+ctx)
+                        Console.println(" POST received = entity = " + ctx.request.entity)
+
+                        Console.println(" POST received = entity data = " + ctx.request.entity.data.asString)
+                        //                        Console.println(" POST request = " + ctx.request)
+                        //                        Console.println(" POST ctx = " + ctx)
+
+                        val map = httpToMap(ctx.request)
+                        Console.println("POST MAP = " + map)
+                        Console.println("POST MAP params = " + map.get("httpparams"))
+                        Console.println("POST MAP body = " + map.get("httpbody"))
+
+                        detach() {
+                          //                    handleRequest(ctx) {
+
+                          //  val resultSave = databaseOperations.save(ctx.request.entity.asString(HttpCharsets.`UTF-8`), domainName)
+                          val today = new DateTime().toString(fmt)
+                          // Console.println("detached at ")
+                          complete(raw"created users at = $today")
+                        }
+                    }
+              } ~
+              path(RestPath) {
+                // Pour le moment, gere les routes non encore prises en compte
+                //gere '/user' && '/user/'
+                rest =>
+                  parameterMap {
+                    params => ctx => // on recupere le contexte global, pour pouvoir manipuler la requete en tant que tel
+
+                      Console.println("!!! PAS GEREE !!! Domain = " + domainName + " , Rest = " + rest + " , params= " + params)
+
+                      val map = httpToMap(ctx.request)
+                      Console.println("PAS GEREE MAP = " + map)
+                      ctx.complete(raw"GET OK")
+
+                    //TODO on attaque DbOperationService pour recuperer ds la bdd l'enregistrement ac l'id envoyé
+
+                  }
+              }
+
+        }
     }
+
+
   }
 
 
-  /*
-  Methode qui reçoit un httpRequest et le "tansforme" en map.
-   Il insere toutes les données du httpRequest dans un map.
-   */
   def httpToMap(httpRequest: HttpRequest): Map[String, Any] = {
     var contentMap: Map[String, Any] = Map()
 
@@ -133,11 +247,11 @@ trait RoutingService extends HttpService {
     if (httpRequest.uri.query.nonEmpty) {
       val params = httpRequest.uri.query.toMap
       // on ajoute les params au map. Pamras en String
-      /*   var paramsString: String=""
-         for (x <- params) {
-           paramsString += stringAsMap(x)
-         }
-         contentMap += "httpparams" -> paramsString     */
+   /*   var paramsString: String=""
+      for (x <- params) {
+        paramsString += stringAsMap(x)
+      }
+      contentMap += "httpparams" -> paramsString     */
 
       var paramsMap: Map[String, Any] = Map()
       for (x <- params) {
@@ -153,10 +267,10 @@ trait RoutingService extends HttpService {
       val json = parse(httpRequest.entity.data.asString).values.asInstanceOf[Map[String, String]]
 
       // on ajoute les elements du body au map
-      /*    for (x <- json) {
-            contentMap = addToMap(x, contentMap)
-          }
-             */
+  /*    for (x <- json) {
+        contentMap = addToMap(x, contentMap)
+      }
+         */
       var bodyMap: Map[String, Any] = Map()
       for (x <- json) {
         bodyMap = addToMap(x, bodyMap)
@@ -257,8 +371,8 @@ trait RoutingService extends HttpService {
     map + (pair._1 -> pair._2)
   }
 
-  def stringAsMap(pair: (String, String)): String = {
-    pair._1 + ":" + pair._2 + ";"
+  def stringAsMap(pair: (String, String)): String ={
+    pair._1+":"+pair._2+";"
   }
 
 
@@ -271,7 +385,7 @@ trait RoutingService extends HttpService {
     Console.println("values = " + values)
     Console.println("values size = " + values.size)
     values match {
-      case p@(_ :: _ :: _) => if (isInteger(p(1)) == false) {
+      case p@(_ :: _) => if (isInteger(p(1)) == false) {
         // si le size de la list >=1
         p(1)
       } else {
@@ -293,7 +407,6 @@ trait RoutingService extends HttpService {
     values match {
       case p@(_ :: _ :: _ :: _) => if (isInteger(p(2))) {
         // si le size de la list >=2
-        //Ex: x :: y :: xs matches lists of length ≥2, binding x to the list's first element, y to the list's second element, and xs to the remainder.
         p(2)
       } else if (p(2).endsWith("Action")) {
         if (p.size >= 3) {
@@ -339,7 +452,6 @@ Ex: /users/searchAction/43 => / (lorsque le params apres le domain se termine pa
     val values = path.toString().split("/").toList
     values match {
       case p@(_ :: _ :: _ :: _ :: _) => if (isInteger(p(2))) {
-        //Ex: x :: y :: xs matches lists of length ≥2, binding x to the list's first element, y to the list's second element, and xs to the remainder.
         path.toString().indexOf(p(3))
       } else if (p(2).endsWith("Action")) {
         if (isInteger(p(3))) {
@@ -363,9 +475,8 @@ Ex: /users/searchAction/43 => / (lorsque le params apres le domain se termine pa
   def extractSpecificActionFromPath(path: Uri.Path): String = {
     val values = path.toString().split("/").toList
     values match {
-      case p@(_ :: _ :: _ :: _) => if (p(2).endsWith("Action")) {
-        // si le size de la list >=3
-        //Ex: x :: y :: xs matches lists of length ≥2, binding x to the list's first element, y to the list's second element, and xs to the remainder.
+      case p@(_ :: _ :: _) => if (p(2).endsWith("Action")) {
+        // si le size de la list >=2
         p(2)
       } else {
         ""

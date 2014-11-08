@@ -135,12 +135,15 @@ trait RoutingService extends HttpService {
                         Console.println("GET MAP = " + map)
                         var testmap =         map("httpparams")
                         var mapdst: Map[String, String] = Map()
-                        Console.println("GET MAP = " + testmap)
-                        for(el <- testmap.split(";").toList){
+                        Console.println("GET MAP params = " + testmap)
+                        Console.println("GET MAP body = " + map.get("httpbody"))
+                      /*  for(el <- testmap.split(";").toList){
                           var list = el.split(":")
                           mapdst += list(0) -> list(1)
                         }
-                        Console.println("mapdst = " + mapdst)
+                        Console.println("mapdst = " + mapdst)    */
+                        Console.println("httpparams = " + testmap.getClass())
+
                         //TODO partout, retourner en erreur si: pas map.httpaction et httpactionspecific, pas map.httpcontroller
 
                         complete(raw"GET $domainName OK")
@@ -193,6 +196,8 @@ trait RoutingService extends HttpService {
 
                       val map = httpToMap(ctx.request)
                       Console.println("GET MAP = " + map)
+                      Console.println("GET MAP params = " + map.get("httpparams"))
+                      Console.println("GET MAP body = " + map.get("httpbody"))
                       ctx.complete(raw"GET list $domainName OK")
 
                     //TODO on attaque DbOperationService pour recuperer ds la bdd la liste du modele spécifié.
@@ -211,13 +216,9 @@ trait RoutingService extends HttpService {
 
                         val map = httpToMap(ctx.request)
                         Console.println("POST MAP = " + map)
+                        Console.println("POST MAP params = " + map.get("httpparams"))
+                        Console.println("POST MAP body = " + map.get("httpbody"))
 
-                        //  clazz = createInstance(domainName)
-                        //  Console.println("domainName = " + clazz)
-
-                        //  Console.println("domainName = " + domainName)
-                        //  Console.println("post instance libelle = " + instance.libelle)
-                        //                detach afin d'executer l'acces à la bdd dans un Future (parallelism)
                         detach() {
                           //                    handleRequest(ctx) {
 
@@ -253,8 +254,8 @@ trait RoutingService extends HttpService {
   }
 
 
-  def httpToMap(httpRequest: HttpRequest): Map[String, String] = {
-    var contentMap: Map[String, String] = Map()
+  def httpToMap(httpRequest: HttpRequest): Map[String, Any] = {
+    var contentMap: Map[String, Any] = Map()
 
     // Ajout de la methode http
     contentMap += "httpmethod" -> httpRequest.method.name // inutile
@@ -263,12 +264,19 @@ trait RoutingService extends HttpService {
     //Ex: 'http://127.0.0.1:8080/domain/searchAction?name=te&username=te&adresse=dakar' => name=te&username=te&adresse=dakar
     if (httpRequest.uri.query.nonEmpty) {
       val params = httpRequest.uri.query.toMap
-      // on ajoute les params au map
-      var paramsString: String=""
+      // on ajoute les params au map. Pamras en String
+   /*   var paramsString: String=""
       for (x <- params) {
         paramsString += stringAsMap(x)
       }
-      contentMap += "httpparams" -> paramsString
+      contentMap += "httpparams" -> paramsString     */
+
+      var paramsMap: Map[String, Any] = Map()
+      for (x <- params) {
+        paramsMap = addToMap(x, paramsMap)
+      }
+      contentMap += "httpparams" -> paramsMap
+
     }
 
     // ajout du body (si existant, (POST, PUT))
@@ -277,9 +285,15 @@ trait RoutingService extends HttpService {
       val json = parse(httpRequest.entity.data.asString).values.asInstanceOf[Map[String, String]]
 
       // on ajoute les elements du body au map
-      for (x <- json) {
+  /*    for (x <- json) {
         contentMap = addToMap(x, contentMap)
       }
+         */
+      var bodyMap: Map[String, Any] = Map()
+      for (x <- json) {
+        bodyMap = addToMap(x, bodyMap)
+      }
+      contentMap += "httpbody" -> bodyMap
     }
 
     // ajout de l'id (/users/12 => 12) et de l'urltail (/users/12/userroles/43 => /userroles/43)
@@ -371,7 +385,7 @@ trait RoutingService extends HttpService {
 
 
   // methode qui ajoute un map à un autre map
-  def addToMap(pair: (String, String), map: Map[String, String]): Map[String, String] = {
+  def addToMap(pair: (String, String), map: Map[String, Any]): Map[String, Any] = {
     map + (pair._1 -> pair._2)
   }
 

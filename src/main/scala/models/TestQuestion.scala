@@ -23,6 +23,7 @@ case class TestQuestion(var id: Option[Long],
   Pour chacune, si une erreur est rencontrée, le nom de la propriété ainsi que le msg d'erreur sont enregistrés dans une map.
   Apres la vérification de toutes les propriétés, la map est renvoyée.
    */
+  //TODO essayer de l'integrer avec la methode apply()
   def checkValidation(): Map[String, String] = {
     var errorsMap: Map[String, String] = Map()
 

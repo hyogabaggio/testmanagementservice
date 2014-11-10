@@ -101,7 +101,7 @@ trait RoutingService extends HttpService {
         // On recupere l'ensemble des données contenues dans la requete et on les charge dans un map.
         // Tout le reste de l'application ne manipulera que ce map
         val httpmap = httpToMap(ctx.request)
-      //  Console.println("GET MAP = " + httpmap)
+        //  Console.println("GET MAP = " + httpmap)
         // On envoie httpmap au 'Controller Global'. Lui se chargera d'identifier le controller visé et de lui envoyer les données
 
         // TODO gerer les valeurs retournées par Controller.receive
@@ -132,12 +132,6 @@ trait RoutingService extends HttpService {
     //Ex: 'http://127.0.0.1:8080/domain/searchAction?name=te&username=te&adresse=dakar' => name=te&username=te&adresse=dakar
     if (httpRequest.uri.query.nonEmpty) {
       val params = httpRequest.uri.query.toMap
-      // on ajoute les params au map. Pamras en String
-      /*   var paramsString: String=""
-         for (x <- params) {
-           paramsString += stringAsMap(x)
-         }
-         contentMap += "httpparams" -> paramsString     */
 
       var paramsMap: Map[String, Any] = Map()
       for (x <- params) {
@@ -153,10 +147,6 @@ trait RoutingService extends HttpService {
       val json = parse(httpRequest.entity.data.asString).values.asInstanceOf[Map[String, String]]
 
       // on ajoute les elements du body au map
-      /*    for (x <- json) {
-            contentMap = addToMap(x, contentMap)
-          }
-             */
       var bodyMap: Map[String, Any] = Map()
       for (x <- json) {
         bodyMap = addToMap(x, bodyMap)
@@ -268,8 +258,6 @@ trait RoutingService extends HttpService {
    */
   def extractDomainFromPath(path: Uri.Path): String = {
     val values = path.toString().split("/").toList
-    Console.println("values = " + values)
-    Console.println("values size = " + values.size)
     values match {
       case p@(_ :: _ :: _) => if (isInteger(p(1)) == false) {
         // si le size de la list >=1
@@ -288,8 +276,6 @@ trait RoutingService extends HttpService {
    */
   def extractIdFromPath(path: Uri.Path): String = {
     val values = path.toString().split("/").toList
-    Console.println("values = " + values)
-    Console.println("values size = " + values.size)
     values match {
       case p@(_ :: _ :: _ :: _) => if (isInteger(p(2))) {
         // si le size de la list >=2
@@ -318,8 +304,6 @@ trait RoutingService extends HttpService {
 
   def extractTailFromPath(path: Uri.Path): String = {
     val index = extractTailStartIndexFromPath(path)
-
-    Console.println("index = " + index)
 
     index match {
       case index: Int if index > 0 => path.toString().substring(index)

@@ -18,10 +18,10 @@ libraryDependencies ++= {
     "io.spray" % "spray-can_2.11" % sprayVersion,
     "io.spray" % "spray-routing_2.11" % sprayVersion,
     "net.liftweb" %% "lift-json" % "3.0-M2",
-   "com.github.nscala-time" %% "nscala-time" % "1.4.0"
+    "com.github.nscala-time" %% "nscala-time" % "1.4.0",
+    "org.scalatest" % "scalatest_2.11" % "2.2.1" % "test"
     //"io.spray" %% "spray-json" % "1.2.5" exclude ("org.scala-lang" , "scala-library"),
   )
 }
 
 
-    

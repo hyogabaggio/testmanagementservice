@@ -96,24 +96,31 @@ trait RoutingService extends HttpService {
   val fmt = DateTimeFormat.forPattern("yyMMddHHmmssSSS")
   //possiblement inutile
   val testmanagementRoute = respondWithMediaType(MediaTypes.`application/json`) {
-    detach() {
-      ctx => // on recupere le contexte global
-        // On recupere l'ensemble des données contenues dans la requete et on les charge dans un map.
-        // Tout le reste de l'application ne manipulera que ce map
-        val httpmap = httpToMap(ctx.request)
-        //  Console.println("GET MAP = " + httpmap)
-        // On envoie httpmap au 'Controller Global'. Lui se chargera d'identifier le controller visé et de lui envoyer les données
+    pathPrefix("api") {
+      //TODO prendre en compte le /api/testmanagementservice/ ds le httprequest reçu dans la  methode addToMap
+      pathPrefix("testmanagementservice") {
+        //TODO prendre en compte le /api/testmanagementservice/ ds le httprequest reçu dans la  methode addToMap
+        detach() {
+          ctx => // on recupere le contexte global
+            // On recupere l'ensemble des données contenues dans la requete et on les charge dans un map.
+            // Tout le reste de l'application ne manipulera que ce map
+            Console.println("ctx.request= " + ctx.request)
+            val httpmap = httpToMap(ctx.request)
+            //  Console.println("GET MAP = " + httpmap)
+            // On envoie httpmap au 'Controller Global'. Lui se chargera d'identifier le controller visé et de lui envoyer les données
 
-        // TODO gerer les valeurs retournées par Controller.receive
-        val controller = new Controller {}
-        controller.receive(httpmap)
+            // TODO gerer les valeurs retournées par Controller.receive
+            val controller = new Controller {}
+            controller.receive(httpmap)
 
-        var domain = httpmap.get("httpdomain")
-        var method = httpmap.get("httpmethod").toString().toUpperCase()
-        //TODO partout, retourner en erreur si: pas httpmap.httpaction et httpactionspecific, pas httpmap.httpcontroller
-        //TODO gerer les erreurs avec customRejectionHandler
+            var domain = httpmap.get("httpdomain")
+            var method = httpmap.get("httpmethod").toString().toUpperCase()
+            //TODO partout, retourner en erreur si: pas httpmap.httpaction et httpactionspecific, pas httpmap.httpcontroller
+            //TODO gerer les erreurs avec customRejectionHandler
 
-        ctx.complete(raw"$method $domain OK  ")
+            ctx.complete(raw"$method $domain OK  ")
+        }
+      }
     }
   }
 
@@ -129,7 +136,7 @@ trait RoutingService extends HttpService {
     contentMap += "httpmethod" -> httpRequest.method.name // inutile
 
     // ajout des params (si existant)
-    //Ex: 'http://127.0.0.1:8080/domain/searchAction?name=te&username=te&adresse=dakar' => name=te&username=te&adresse=dakar
+    //Ex: 'http://127.0.0.1:8080/api/testmanagementservice/domain/searchAction?name=te&username=te&adresse=dakar' => name=te&username=te&adresse=dakar
     if (httpRequest.uri.query.nonEmpty) {
       val params = httpRequest.uri.query.toMap
 
@@ -259,9 +266,10 @@ trait RoutingService extends HttpService {
   def extractDomainFromPath(path: Uri.Path): String = {
     val values = path.toString().split("/").toList
     values match {
-      case p@(_ :: _ :: _) => if (isInteger(p(1)) == false) {
-        // si le size de la list >=1
-        p(1)
+      case p@(_ :: _ :: _ :: _ :: _) => if (isInteger(p(3)) == false) {
+        // si le size de la list >=3
+        // on prend 3 car l'adresse est de la forme http://127.0.0.1:8080/api/testmanagementservice/testQuestions => testQuestions
+        p(3)
       } else {
         ""
       }
@@ -277,13 +285,13 @@ trait RoutingService extends HttpService {
   def extractIdFromPath(path: Uri.Path): String = {
     val values = path.toString().split("/").toList
     values match {
-      case p@(_ :: _ :: _ :: _) => if (isInteger(p(2))) {
-        // si le size de la list >=2
+      case p@(_ :: _ :: _ :: _ :: _ :: _) => if (isInteger(p(4))) {
+        // si le size de la list >=5
         //Ex: x :: y :: xs matches lists of length ≥2, binding x to the list's first element, y to the list's second element, and xs to the remainder.
-        p(2)
-      } else if (p(2).endsWith("Action")) {
-        if (p.size >= 3) {
-          if (isInteger(p(3))) p(3)
+        p(4)
+      } else if (p(4).endsWith("Action")) {
+        if (p.size >= 5) {
+          if (isInteger(p(5))) p(5)
           else ""
         } else {
           ""
@@ -322,18 +330,18 @@ Ex: /users/searchAction/43 => / (lorsque le params apres le domain se termine pa
     // on recupere l'index du debut du trail
     val values = path.toString().split("/").toList
     values match {
-      case p@(_ :: _ :: _ :: _ :: _) => if (isInteger(p(2))) {
+      case p@(_ :: _ :: _ :: _ :: _ :: _ :: _) => if (isInteger(p(4))) {
         //Ex: x :: y :: xs matches lists of length ≥2, binding x to the list's first element, y to the list's second element, and xs to the remainder.
-        path.toString().indexOf(p(3))
-      } else if (p(2).endsWith("Action")) {
-        if (isInteger(p(3))) {
-          if (p.size >= 4) path.toString().indexOf(p(4))
+        path.toString().indexOf(p(5))
+      } else if (p(4).endsWith("Action")) {
+        if (isInteger(p(5))) {
+          if (p.size >= 6) path.toString().indexOf(p(6))
           else 0
         } else {
-          path.toString().indexOf(p(3))
+          path.toString().indexOf(p(5))
         }
       } else {
-        path.toString().indexOf(p(2))
+        path.toString().indexOf(p(4))
       }
       case _ => 0
     }
@@ -347,10 +355,10 @@ Ex: /users/searchAction/43 => / (lorsque le params apres le domain se termine pa
   def extractSpecificActionFromPath(path: Uri.Path): String = {
     val values = path.toString().split("/").toList
     values match {
-      case p@(_ :: _ :: _ :: _) => if (p(2).endsWith("Action")) {
-        // si le size de la list >=3
+      case p@(_ :: _ :: _ :: _ :: _ :: _) => if (p(4).endsWith("Action")) {
+        // si le size de la list >=5
         //Ex: x :: y :: xs matches lists of length ≥2, binding x to the list's first element, y to the list's second element, and xs to the remainder.
-        p(2)
+        p(4)
       } else {
         ""
       }

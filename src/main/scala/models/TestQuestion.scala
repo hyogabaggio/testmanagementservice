@@ -9,7 +9,7 @@ package models
  */
 case class TestQuestion(var id: Option[Long],
                         var libelle: String,
-                        var groupe: String) {
+                        var groupe: String) extends Domain {
 
   //  second constructeur
   def this() = this(null, null, null)

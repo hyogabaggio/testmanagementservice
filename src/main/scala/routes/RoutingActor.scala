@@ -104,7 +104,7 @@ trait RoutingService extends HttpService {
           ctx => // on recupere le contexte global
             // On recupere l'ensemble des données contenues dans la requete et on les charge dans un map.
             // Tout le reste de l'application ne manipulera que ce map
-            Console.println("ctx.request= " + ctx.request)
+            //  Console.println("ctx.request= " + ctx.request)
             val httpmap = httpToMap(ctx.request)
             //  Console.println("GET MAP = " + httpmap)
             // On envoie httpmap au 'Controller Global'. Lui se chargera d'identifier le controller visé et de lui envoyer les données
@@ -129,6 +129,7 @@ trait RoutingService extends HttpService {
   Methode qui reçoit un httpRequest et le "tansforme" en map.
    Il insere toutes les données du httpRequest dans un map.
    */
+  // TODO http://codereview.stackexchange.com/questions/10030/osgi-like-infrastructure
   def httpToMap(httpRequest: HttpRequest): Map[String, Any] = {
     var contentMap: Map[String, Any] = Map()
 

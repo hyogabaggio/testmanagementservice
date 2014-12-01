@@ -1,5 +1,7 @@
 package controllers
 
+import models.{Domain, Users}
+
 /**
  * Created by hyoga on 28/10/2014.
  *
@@ -54,6 +56,48 @@ trait Controller {
   def callMethod(className: String, methodName: String, argsMethod: Map[String, Any]): Unit = {
     val classInstance = createInstance(className)
     val method = classInstance.getClass.getMethod(methodName, classOf[Map[String, Any]])
-    method.invoke(classInstance, argsMethod)
+    if (method != None) method.invoke(classInstance, argsMethod)
   }
+
+
+  /*
+  Methode permettant de faire un binding entre une map et un modele.
+  Un modele est une case class contenue dans le package Models.
+  La map contient un ensemble de paires. Chaque pair etant le nom de propriété en key et la valeur de la propriété en value.
+
+  Ex: Model: userInstance:User(nom:String, prenom:String)
+  Map: map:Map(nom -> "Baggio", prenom -> "Roby")
+  bindingFromMap(map, userInstance)
+    => userInstance.nom = Baggio,
+    => userInstance.prenom = Roby
+   */
+  def binding(classInstance: AnyRef, params: Map[String, Any]): AnyRef = {
+    // var userClone = user.clone()
+    params.map(kv => bindingFromPair(kv, classInstance))
+    return classInstance
+  }
+
+  /*
+      Methode permettant de faire un binding entre une pair "key-value" et un modele.
+      Un modele est une case class contenue dans le package Models.
+      La pair contient le nom de propriété en key et la valeur de la propriété en value.
+
+      Ex: Model: userInstance:User(nom:String, prenom:String)
+      Pair: kv:Pair(nom, "Baggio")
+      bindingFromPair(kv, userInstance)
+        => userInstance.nom = Baggio
+   */
+  def bindingFromPair(kv: (String, Any), classInstance: AnyRef): AnyRef = {
+    // var userClone = user.clone()
+    val listFields = classInstance.getClass.getDeclaredFields().map(_.getName)
+    if (listFields.contains(kv._1.toString)) {
+      classInstance.asInstanceOf[Domain].getSet(classInstance) set(kv._1.toString, kv._2)
+
+      // ne marche que sur les string, et encore, pas sur les option[string]
+      //TODO voir http://stackoverflow.com/questions/1589603/scala-set-a-field-value-reflectively-from-field-name
+
+    }
+    return classInstance
+  }
+
 }

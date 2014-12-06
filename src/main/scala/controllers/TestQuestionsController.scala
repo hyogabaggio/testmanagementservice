@@ -4,7 +4,7 @@ package controllers
  * Created by hyoga on 27/10/2014.
  */
 class TestQuestionsController {
-  // TODO herite de Controller ????
+
 
   def list(params: Map[String, Any]) = {
     Console.println(" TestQuestionsController list = " + params)

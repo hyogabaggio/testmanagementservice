@@ -27,10 +27,12 @@ class UsersController extends Controller {
     Console.println("user firstname = " + user.firstname)
     Console.println("user dateNaissance = " + user.dateNaissance)
     Console.println("user id = " + user.id)
-    Console.println("user dateNaissance = " + user.dateNaissance)
+    Console.println("user isOnline = " + user.isOnline)
     Console.println("user fullName = " + user.fullName)
 
     Console.println("user valide = " + user.validate)
+    if (user.validate.isEmpty) Console.println("is valide = true")
+    else Console.println("is valide = false")
     // Console.println("user valide implicit = " + user.validate)
 
 

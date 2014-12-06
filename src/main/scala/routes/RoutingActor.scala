@@ -99,7 +99,6 @@ trait RoutingService extends HttpService {
     pathPrefix("api") {
       //TODO prendre en compte le /api/testmanagementservice/ ds le httprequest reçu dans la  methode addToMap
       pathPrefix("testmanagementservice") {
-        //TODO prendre en compte le /api/testmanagementservice/ ds le httprequest reçu dans la  methode addToMap
         detach() {
           ctx => // on recupere le contexte global
             // On recupere l'ensemble des données contenues dans la requete et on les charge dans un map.

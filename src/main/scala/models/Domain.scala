@@ -45,7 +45,7 @@ trait Domain {
   }
 
 
-  def validateDomain(implicit classInstance: AnyRef): Boolean = {
+  def validateDomain(implicit classInstance: AnyRef): Map[String, String] = {
     var errorsMap: Map[String, String] = Map()
     val listFields = classInstance.getClass.getDeclaredFields().map(_.getName)
     listFields.map(field => {
@@ -54,12 +54,13 @@ trait Domain {
     for (err <- errorsMap) {
       Console.println("error = " + err)
     }
-    Console.println("error size = " + errorsMap.size)
+    /*  Console.println("error size = " + errorsMap.size)
 
-    errorsMap.size match {
-      case 0 => true
-      case _ => false
-    }
+      errorsMap.size match {
+        case 0 => true
+        case _ => false
+      }    */
+    return errorsMap
   }
 
 
@@ -86,7 +87,7 @@ trait Domain {
 
 class DomainAnyRef(anyClass: AnyRef) {
 
-  def validate(): Boolean = {
+  def validate(): Map[String, String] = {
     val domain = anyClass.asInstanceOf[Domain]
     return domain.validateDomain(domain)
   }

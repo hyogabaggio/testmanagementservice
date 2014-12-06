@@ -2,6 +2,7 @@ package controllers
 
 import models.{TestQuestion, Users}
 import utilities.Tools
+import models.Conversions.domainToAnyRef
 
 /**
  * Created by macbookpro on 23/11/2014.
@@ -25,9 +26,11 @@ class UsersController extends Controller {
     Console.println("user name = " + user.name)
     Console.println("user firstname = " + user.firstname)
     Console.println("user dateNaissance = " + user.dateNaissance)
+    Console.println("user id = " + user.id)
+    Console.println("user dateNaissance = " + user.dateNaissance)
     Console.println("user fullName = " + user.fullName)
 
-    Console.println("user valide = " + user.validate(user))
+    Console.println("user valide = " + user.validate)
     // Console.println("user valide implicit = " + user.validate)
 
 

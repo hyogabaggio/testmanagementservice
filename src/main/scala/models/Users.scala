@@ -14,18 +14,18 @@ case class Users(//var id: Option[Long],
                  var email: String,
                  var password: String,
                  // var tel: Option[Long],
-                 var tel: Long,
+                 var tel: Int,
                  // var sexe: Option[String],
                  var sexe: String,
                  //  var fullName: Option[String],
                  var fullName: String,
-                 // var dateNaissance: Option[DateTime])
+                 var isOnline: Boolean,
                  var dateNaissance: DateTime) extends Domain {
 
   //TODO module de recup des infos depuis un compte mail, facebook, twitter
 
   //  second constructeur
-  def this() = this(0, null, null, null, null, 0, null, null, null)
+  def this() = this(0, null, null, null, null, 0, null, null, false, null)
 
   /*require(name != "" && name != null, "users.name.not.blank.error")
   require(firstname != "" && firstname != null, "users.firstname.not.blank.error")
@@ -46,6 +46,7 @@ case class Users(//var id: Option[Long],
     case "email" if email == "" || email == null => ("email" -> "users.email.not.blank.error")
     case "password" if password == "" || password == null => ("password" -> "users.password.not.blank.error")
     case "sexe" if (!List("H", "F").contains(sexe)) => ("sexe" -> "users.sexe.not.valid.error")
+    case "dateNaissance" if dateNaissance == null => ("dateNaissance" -> "users.dateNaissance.not.nullable.error")
     case _ => ("none", "none")
 
 

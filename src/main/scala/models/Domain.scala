@@ -13,34 +13,42 @@ trait Domain {
 
   /*
   Methode permettant de setter et de getter des valeurs aux propriétés d'un modele "à l'aveugle", i.e sans les ecrire.
-  En gros elle permet un binding depuis une map par exemple. On bouclerait sur la map, et pour chaque key representant le nom de la propriété, on setterait sa valeur reepresentée par la value de la map.
+  En gros elle permet un binding depuis une map par exemple. On boucle sur la map, et pour chaque key representant le nom de la propriété, on set sa valeur representée par la value de la map.
    */
   implicit def getSet(ref: AnyRef) = new {
-    def get(name: String): Any = ref.getClass.getMethods.find(_.getName == name).get.invoke(ref)
+    // On recupere la liste des propriétés de la classe
+    // Avant un get ou un set, on s'assure d'abord que la propriété existe bien dans le modele
+    val listFields = ref.getClass.getDeclaredFields().map(_.getName)
+
+    def get(name: String): Any = {
+      if (listFields.contains(name))
+        ref.getClass.getMethods.find(_.getName == name).get.invoke(ref)
+    }
 
     def set(name: String, value: Any): Unit = {
-      import utilities.Conversions.stringToStringComplements
-      val tools = new Tools
-      val c = new Constantes {}
-      val property = ref.getClass.getDeclaredField(name)
-      Console.println("property = " + property)
-      val propertyType = property.getType.getSimpleName
-      Console.println("propertyType = " + propertyType)
+      if (listFields.contains(name)) {
+        import utilities.Conversions.stringToStringComplements
+        val tools = new Tools
+        val property = ref.getClass.getDeclaredField(name)
+        // Console.println("property = " + property)
+        val propertyType = property.getType.getSimpleName
+        // Console.println("propertyType = " + propertyType)
 
-      propertyType match {
+        propertyType match {
 
-        case "String" => ref.getClass.getMethods.find(_.getName == name + "_$eq").get.invoke(ref, value.asInstanceOf[AnyRef])
-        case "long" if value.toString.isNumber => ref.getClass.getMethods.find(_.getName == name + "_$eq").get.invoke(ref, value.toString.toLong.asInstanceOf[AnyRef])
-        case "int" if value.toString.isNumber => ref.getClass.getMethods.find(_.getName == name + "_$eq").get.invoke(ref, value.toString.toInt.asInstanceOf[AnyRef])
-        case "float" if value.toString.isNumber => ref.getClass.getMethods.find(_.getName == name + "_$eq").get.invoke(ref, value.toString.toFloat.asInstanceOf[AnyRef])
-        case "double" if value.toString.isNumber => ref.getClass.getMethods.find(_.getName == name + "_$eq").get.invoke(ref, value.toString.toDouble.asInstanceOf[AnyRef])
-        case "short" if value.toString.isNumber => ref.getClass.getMethods.find(_.getName == name + "_$eq").get.invoke(ref, value.toString.toShort.asInstanceOf[AnyRef])
-        case "boolean" if value.toString.isBoolean => ref.getClass.getMethods.find(_.getName == name + "_$eq").get.invoke(ref, value.toString.toBoolean.asInstanceOf[AnyRef])
-        case "DateTime" if value.toString.isDateTime => ref.getClass.getMethods.find(_.getName == name + "_$eq").get.invoke(ref, value.toString.toDateTime().asInstanceOf[AnyRef])
-        case _ => None
-        // TODO voir d'autres types à gerer"
+          case "String" => ref.getClass.getMethods.find(_.getName == name + "_$eq").get.invoke(ref, value.asInstanceOf[AnyRef])
+          case "long" if value.toString.isNumber => ref.getClass.getMethods.find(_.getName == name + "_$eq").get.invoke(ref, value.toString.toLong.asInstanceOf[AnyRef])
+          case "int" if value.toString.isNumber => ref.getClass.getMethods.find(_.getName == name + "_$eq").get.invoke(ref, value.toString.toInt.asInstanceOf[AnyRef])
+          case "float" if value.toString.isNumber => ref.getClass.getMethods.find(_.getName == name + "_$eq").get.invoke(ref, value.toString.toFloat.asInstanceOf[AnyRef])
+          case "double" if value.toString.isNumber => ref.getClass.getMethods.find(_.getName == name + "_$eq").get.invoke(ref, value.toString.toDouble.asInstanceOf[AnyRef])
+          case "short" if value.toString.isNumber => ref.getClass.getMethods.find(_.getName == name + "_$eq").get.invoke(ref, value.toString.toShort.asInstanceOf[AnyRef])
+          case "boolean" if value.toString.isBoolean => ref.getClass.getMethods.find(_.getName == name + "_$eq").get.invoke(ref, value.toString.toBoolean.asInstanceOf[AnyRef])
+          case "DateTime" if value.toString.isDateTime => ref.getClass.getMethods.find(_.getName == name + "_$eq").get.invoke(ref, value.toString.toDateTime().asInstanceOf[AnyRef])
+          case _ => None
+          // TODO voir d'autres types à gerer"
+        }
+
       }
-
     }
   }
 
@@ -51,15 +59,6 @@ trait Domain {
     listFields.map(field => {
       if (checkValidation(classInstance, field)._1 != "none") errorsMap += checkValidation(classInstance, field)
     })
-    for (err <- errorsMap) {
-      Console.println("error = " + err)
-    }
-    /*  Console.println("error size = " + errorsMap.size)
-
-      errorsMap.size match {
-        case 0 => true
-        case _ => false
-      }    */
     return errorsMap
   }
 

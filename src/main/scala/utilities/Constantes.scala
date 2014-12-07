@@ -11,4 +11,8 @@ class Constantes {
   De fait, une donnée reçue avec ce format sera successfullment transformée en Date
    */
   final val datePattern = "yyyy-MM-dd HH:mm:ss";
+
+  // les types de datastructures acceptées par Redis
+  // Toute datastructure renseignée dans un modele doit être comprise dans cette liste
+  final val datastructures: List[String] = List("hash", "set", "list")
 }

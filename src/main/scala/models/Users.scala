@@ -13,11 +13,8 @@ case class Users(//var id: Option[Long],
                  var firstname: String,
                  var email: String,
                  var password: String,
-                 // var tel: Option[Long],
                  var tel: Int,
-                 // var sexe: Option[String],
                  var sexe: String,
-                 //  var fullName: Option[String],
                  var fullName: String,
                  var isOnline: Boolean,
                  var dateNaissance: DateTime) extends Domain {
@@ -27,11 +24,14 @@ case class Users(//var id: Option[Long],
   //  second constructeur
   def this() = this(0, null, null, null, null, 0, null, null, false, null)
 
-  /*require(name != "" && name != null, "users.name.not.blank.error")
-  require(firstname != "" && firstname != null, "users.firstname.not.blank.error")
-  require(email != "" && email != null, "users.firstname.not.blank.error")
-  require(password != "" && password != null, "users.password.not.blank.error")
-  require(/*sexe != "" && sexe != null &&*/ List("H", "F").contains(sexe), "users.sexe.not.valid.error")    */
+  //
+  /*  Cette propriété represente le type de structure dans lequel ce modele est stocké dans Redis.
+  Redis a des structures, des "types de tables", dans lesquelles elle stocke les données.
+  Chaque structure a des propriétés differentes, et surtout des commandes differentes.
+  Donc il faut par avance connaitre cette structure avant de pouvoir effectuer des requetes dessus
+      => http://redis.io/commands
+   */
+  val redisStructure = "hashes"
 
 
   /*
@@ -56,7 +56,7 @@ case class Users(//var id: Option[Long],
   override def toString() = fullName
 
   // generating fullName
-  this.fullName = this.name + this.firstname
+  //this.fullName = this.name + this.firstname
 
 
 }

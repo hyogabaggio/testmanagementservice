@@ -1,6 +1,9 @@
 package controllers
 
 import models.{TestQuestion, Users}
+import net.liftweb.json.Serialization._
+import net.liftweb.json.{NoTypeHints, Serialization}
+import services.database.DbOperationService
 import utilities.Tools
 import models.Conversions.domainToAnyRef
 
@@ -29,38 +32,17 @@ class UsersController extends Controller {
     Console.println("user id = " + user.id)
     Console.println("user isOnline = " + user.isOnline)
     Console.println("user fullName = " + user.fullName)
+    Console.println("user redisStructure = " + user.redisStructure)
 
     Console.println("user valide = " + user.validate)
     if (user.validate.isEmpty) Console.println("is valide = true")
     else Console.println("is valide = false")
+    val db: DbOperationService = new DbOperationService()
+    db.checkAndSave(user)
+
     // Console.println("user valide implicit = " + user.validate)
 
 
-  }
-
-
-  //Unused
-  def assignFromPair(kv: (String, Any), user: Users): Unit = {
-    //   Console.println("property = " + kv._1)
-    //  Console.println("value = " + kv._2)
-    val listFields = user.getClass.getDeclaredFields().map(_.getName)
-    //  listFields.foreach(it => Console.println("listFields = " + it))
-
-
-
-    if (listFields.contains(kv._1.toString)) {
-      /*   var field = user.getClass.getDeclaredField(kv._1.toString)
-         field.setAccessible(true)
-         Console.println("field = " + field)
-         // Console.println("field = " + field.isAccessible + ", class = " + field.getClass)
-         field.set(user, kv._2)        */
-
-      user.getSet(user) set(kv._1.toString, kv._2)
-
-      // ne marche que sur les string, et encore, pas sur les option[string]
-      //TODO voir http://stackoverflow.com/questions/1589603/scala-set-a-field-value-reflectively-from-field-name
-
-    }
   }
 
 

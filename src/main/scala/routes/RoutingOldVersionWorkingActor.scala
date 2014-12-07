@@ -6,7 +6,7 @@ import net.liftweb.json.Serialization._
 import net.liftweb.json._
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
-import services.DbOperationService
+import services.database.DbOperationService
 import spray.http._
 import spray.routing._
 import utilities.Failure

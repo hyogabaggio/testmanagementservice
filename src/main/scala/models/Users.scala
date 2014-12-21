@@ -24,14 +24,20 @@ case class Users(//var id: Option[Long],
   //  second constructeur
   def this() = this(0, null, null, null, null, 0, null, null, false, null)
 
-  //
+
   /*  Cette propriété represente le type de structure dans lequel ce modele est stocké dans Redis.
   Redis a des structures, des "types de tables", dans lesquelles elle stocke les données.
   Chaque structure a des propriétés differentes, et surtout des commandes differentes.
   Donc il faut par avance connaitre cette structure avant de pouvoir effectuer des requetes dessus
       => http://redis.io/commands
    */
-  val redisStructure = "hashes"
+  val redisStructure = "hash"
+
+  /* Redis ne gere pas les incrementations automatiques de clé (id)
+   Cette prorpiété represente la clé ou est stocké la derniere valeur de l'id de cette table.
+   Avant chaque save, on m'incremente, et la nouvelle valeur devient l'id
+   */
+  val redisId = "users:id"
 
 
   /*

@@ -63,7 +63,6 @@ trait RoutingOldVersionWorkingService extends HttpService {
   implicit def executionContext = actorRefFactory.dispatcher
 
   implicit val formats = DefaultFormats
-  val databaseOperations = new DbOperationService
 
   implicit val customRejectionHandler = RejectionHandler {
     case rejections => mapHttpResponse {

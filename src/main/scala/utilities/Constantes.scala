@@ -14,5 +14,5 @@ class Constantes {
 
   // les types de datastructures acceptées par Redis
   // Toute datastructure renseignée dans un modele doit être comprise dans cette liste
-  final val datastructures: List[String] = List("hash", "set", "list")
+  final val datastructures: List[String] = List("hash", "set", "list", "sortedset")
 }

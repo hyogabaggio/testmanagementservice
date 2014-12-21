@@ -53,6 +53,10 @@ trait Domain {
   }
 
 
+  /*
+  Methode de validation des models.
+  Elle est plus une methode d'accés. Elle boucle sur l'ensemble des propriétés du model, et appelle la methode de validation (checkValidation) sur chacune d'elles.
+   */
   def validateDomain(implicit classInstance: AnyRef): Map[String, String] = {
     var errorsMap: Map[String, String] = Map()
     val listFields = classInstance.getClass.getDeclaredFields().map(_.getName)
@@ -60,6 +64,16 @@ trait Domain {
       if (checkValidation(classInstance, field)._1 != "none") errorsMap += checkValidation(classInstance, field)
     })
     return errorsMap
+  }
+
+  /*
+     Methode qui transforme un Domain en Map
+   */
+  def domainToMap(implicit DomainInstance: AnyRef): Map[String, Any] = {
+    (Map[String, Any]() /: DomainInstance.getClass.getDeclaredFields) { (a, f) =>
+      f.setAccessible(true)
+      a + (f.getName -> f.get(DomainInstance))
+    }
   }
 
 
@@ -87,16 +101,28 @@ trait Domain {
 class DomainAnyRef(anyClass: AnyRef) {
 
   def validate(): Map[String, String] = {
-    val domain = anyClass.asInstanceOf[Domain]
-    return domain.validateDomain(domain)
+    //  Console.println("is instance of ? = "+anyClass.isInstanceOf[Domain])
+    if (anyClass.isInstanceOf[Domain]) {
+      val domain = anyClass.asInstanceOf[Domain]
+      return domain.validateDomain(domain)
+    } else Map("Domain" -> "class.not.a.Domain")
+
+  }
+
+  def toMap(): Map[String, Any] = {
+    if (anyClass.isInstanceOf[Domain]) {
+      val domain = anyClass.asInstanceOf[Domain]
+      return domain.domainToMap(domain)
+    } else Map("Domain" -> "class.not.a.Domain")
   }
 }
 
 object Conversions {
 
-  //Tranforme un AnyRef en DomainAnyRef
-  // Et permet donc d'appliquer au AnyRef les methodes de DomainAnyRef
-  // Ex: DomainAnyRef a une methode isBoolean, avec cette conversion, on peut faire AnyRef.isBoolean
+  /*Tranforme un AnyRef en DomainAnyRef
+  Et permet donc d'appliquer au AnyRef les methodes de DomainAnyRef
+  Ex: DomainAnyRef a une methode validate(), avec cette conversion, on peut faire AnyRef.validate()
+  */
   implicit def domainToAnyRef(anyClass: AnyRef) = new DomainAnyRef(anyClass)
 
 }

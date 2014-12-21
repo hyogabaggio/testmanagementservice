@@ -12,17 +12,15 @@ import models.Conversions.domainToAnyRef
  */
 class UsersController extends Controller {
 
+  val db: DbOperationService = DbOperationService
+
   def save(params: Map[String, Any]) = {
-    // Console.println(" UsersController save = " + params)
-    //  Console.println(" UsersController save = " + params.get("httpbody"))
-    //  Console.println(" UsersController class = " + params.get("httpbody").getClass)
 
     val tools = new Tools
-    // Console.println(" UsersController getType  = " + tools.getType(params.get("httpbody")))
-    //  Console.println(" UsersController getType getClass = " + tools.getType(params.get("httpbody")).getClass)
     var user: Users = new Users()
 
     var mapHttpbody = tools.getType(params.get("httpbody")).asInstanceOf[Map[String, Any]]
+    //on charge les elements reçus dans le case class Users
     binding(user, mapHttpbody).asInstanceOf[Users]
 
     Console.println("user = " + user)
@@ -37,7 +35,7 @@ class UsersController extends Controller {
     Console.println("user valide = " + user.validate)
     if (user.validate.isEmpty) Console.println("is valide = true")
     else Console.println("is valide = false")
-    val db: DbOperationService = new DbOperationService()
+
     db.checkAndSave(user)
 
     // Console.println("user valide implicit = " + user.validate)

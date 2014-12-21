@@ -72,7 +72,6 @@ trait Controller {
     => userInstance.prenom = Roby
    */
   def binding(classInstance: AnyRef, params: Map[String, Any]): AnyRef = {
-    // var userClone = user.clone()
     params.map(kv => bindingFromPair(kv, classInstance))
     return classInstance
   }
@@ -88,13 +87,8 @@ trait Controller {
         => userInstance.nom = Baggio
    */
   def bindingFromPair(kv: (String, Any), classInstance: AnyRef): AnyRef = {
-    // var userClone = user.clone()
-    /* val listFields = classInstance.getClass.getDeclaredFields().map(_.getName)
-     if (listFields.contains(kv._1.toString)) {
-
-
-     }  */
-    classInstance.asInstanceOf[Domain].getSet(classInstance) set(kv._1.toString, kv._2)
+    if (classInstance.isInstanceOf[Domain])
+      classInstance.asInstanceOf[Domain].getSet(classInstance) set(kv._1.toString, kv._2)
 
     // ne marche que sur les string, et encore, pas sur les option[string]
     //TODO voir http://stackoverflow.com/questions/1589603/scala-set-a-field-value-reflectively-from-field-name

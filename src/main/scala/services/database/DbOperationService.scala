@@ -6,13 +6,15 @@ import net.liftweb.json._
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 import net.liftweb.json.Serialization.{read, write}
+import services.database.redis.RedisService
+import utilities.Constantes
 
 /**
  * Created by macbookpro on 19/10/2014.
  */
-class DbOperationService {
+trait DbOperationService {
 
-  // val redis = new RedisClient("localhost", 6379)     //TODO centraliser l'acces à la bdd
+  val redisService: RedisService = RedisService
   val fmt = DateTimeFormat.forPattern("yyMMddHHmmssSSS")
 
 
@@ -29,22 +31,30 @@ class DbOperationService {
   d'essayer de saver
     */
   def checkAndSave(dataModel: AnyRef): Any = {
-    // Validation du modele
-    // La methode validate retourne une liste d'erreurs du modele
-    // On ne save que si cette liste est vide
+    /* Validation du modele
+     La methode validate retourne une liste d'erreurs du modele
+     On ne save que si cette liste est vide
+    */
     dataModel.validate.isEmpty match {
       case true => {
-        // les valeurs envoyées sont valides
+        // les valeurs envoyées sont bien valides, donc on transforme le Domain en Map avant de le save()
+        // On le transforme en Map car la methode de save de Redis ne prend en argument que des Iterable
 
-        // on serialize le case class
-        implicit val formats = Serialization.formats(NoTypeHints)
-        val jsonDataModel = write(dataModel)
+        val dataMap = dataModel.toMap()
+        // Console.println("dataMap = "+dataMap)
 
         //Save dans Redis
-        //On recupere le type de datastructure
-        val redisStructure = dataModel.asInstanceOf[Domain].getSet(dataModel) get ("redisStructure") //TODO Attention ceci implique qu'on ne peut save qu'un domain, i.e une classe qui extends Domain
-        val redisService: RedisService = new RedisService()
-        redisService.save(jsonDataModel, redisStructure.toString)
+        //On recupere le type de datastructure et l'id
+        val redisStructure = dataModel.asInstanceOf[Domain].getSet(dataModel) get ("redisStructure")
+        val redisId = dataModel.asInstanceOf[Domain].getSet(dataModel) get ("redisId")
+        // TODO ne pas systematiser l'utilisation de redis, peut-etre gerer un choix de bdd
+
+        // On s'assure que redisStructure et redisId ne sont pas nuls
+        //Et que la dataStructure envoyée est contenue dans la liste des dataStructure acceptées par l'appli
+        if (redisId == null || redisId == "" || redisStructure == null || redisStructure == "") return "redisStructure.or.redisId.not.found"
+        else if (!new Constantes {}.datastructures.contains(redisStructure)) return "redisStructure.not.valid"
+
+        redisService.save(dataMap, redisStructure.toString, redisId.toString)
 
       }
       case _ => return dataModel.validate()
@@ -53,3 +63,9 @@ class DbOperationService {
 
   }
 }
+
+
+/*
+http://www.michaelpollmeier.com/2014/06/29/simple-dependency-injection-scala/
+ */
+object DbOperationService extends DbOperationService

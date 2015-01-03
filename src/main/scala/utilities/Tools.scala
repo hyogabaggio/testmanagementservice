@@ -1,5 +1,6 @@
 package utilities
 
+import com.typesafe.config.ConfigFactory
 import org.joda.time.DateTime
 import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
 
@@ -47,5 +48,24 @@ class Tools {
 
   }
 
+  def getEnvironment(): String = {
+    return "development" //TODO positionner une valeur quelque part pour renvoyer soit "development" soit "production"
+  }
+
+
+  def getRedisUrl(): String = {
+    val databaseConfig = ConfigFactory.load().getConfig("database")
+    val redisConfig = databaseConfig.getConfig("redis")
+    val envConfig = redisConfig.getConfig(getEnvironment)
+    return envConfig.getString("url")
+  }
+
+
+  def getRedisPort(): Int = {
+    val databaseConfig = ConfigFactory.load().getConfig("database")
+    val redisConfig = databaseConfig.getConfig("redis")
+    val envConfig = redisConfig.getConfig(getEnvironment)
+    return envConfig.getInt("port")
+  }
 
 }

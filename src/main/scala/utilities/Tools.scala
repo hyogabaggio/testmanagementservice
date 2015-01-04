@@ -1,6 +1,7 @@
 package utilities
 
 import com.typesafe.config.ConfigFactory
+import models.Domain
 import org.joda.time.DateTime
 import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
 
@@ -66,6 +67,53 @@ class Tools {
     val redisConfig = databaseConfig.getConfig("redis")
     val envConfig = redisConfig.getConfig(getEnvironment)
     return envConfig.getInt("port")
+  }
+
+
+  /*
+  Methode permettant de faire un binding entre une map et un modele.
+  Un modele est une case class contenue dans le package Models.
+  La map contient un ensemble de paires. Chaque pair etant le nom de propriété en key et la valeur de la propriété en value.
+
+  Ex: Model: userInstance:User(nom:String, prenom:String)
+  Map: map:Map(nom -> "Baggio", prenom -> "Roby")
+  bindingFromMap(map, userInstance)
+    => userInstance.nom = Baggio,
+    => userInstance.prenom = Roby
+   */
+  def binding(classInstance: AnyRef, params: Map[String, Any]): AnyRef = {
+    params.map(kv => bindingFromPair(kv, classInstance))
+    return classInstance
+  }
+
+  /*
+  Même methode que binding.
+  Sauf que le params qui vient contient une map "httpbody". Il faut d'abord l'extraire, puis le binder.
+   */
+  def extractHttpbodyAndBind(classInstance: AnyRef, params: Map[String, Any]): AnyRef = {
+    var mapHttpbody = getType(params.get("httpbody")).asInstanceOf[Map[String, Any]]
+    mapHttpbody.map(kv => bindingFromPair(kv, classInstance))
+    return classInstance
+  }
+
+
+  /*
+     Methode permettant de faire un binding entre une pair "key-value" et un modele.
+     Un modele est une case class contenue dans le package Models.
+     La pair contient le nom de propriété en key et la valeur de la propriété en value.
+
+     Ex: Model: userInstance:User(nom:String, prenom:String)
+     Pair: kv:Pair(nom, "Baggio")
+     bindingFromPair(kv, userInstance)
+       => userInstance.nom = Baggio
+  */
+  def bindingFromPair(kv: (String, Any), classInstance: AnyRef): AnyRef = {
+    if (classInstance.isInstanceOf[Domain])
+      classInstance.asInstanceOf[Domain].getSet(classInstance) set(kv._1.toString, kv._2)
+
+    // ne marche que sur les string, et encore, pas sur les option[string]
+    //TODO voir http://stackoverflow.com/questions/1589603/scala-set-a-field-value-reflectively-from-field-name
+    return classInstance
   }
 
 }

@@ -1,6 +1,7 @@
 package models
 
 import com.sun.tools.internal.xjc.api.util.ToolsJarNotFoundException
+import services.database.DbOperationService
 import utilities.{Constantes, Tools}
 
 /**
@@ -67,9 +68,22 @@ trait Domain {
   }
 
   /*
-     Methode qui transforme un Domain en Map
+     Methode qui transforme un Domain en Map[String, String]
    */
-  def domainToMap(implicit DomainInstance: AnyRef): Map[String, Any] = {
+  def domainToMap(implicit DomainInstance: AnyRef): Map[String, String] = {
+    (Map[String, String]() /: DomainInstance.getClass.getDeclaredFields) { (a, f) =>
+      f.setAccessible(true)
+      a + (f.getName -> {
+        if (f.get(DomainInstance) != null) f.get(DomainInstance).toString
+        else "null"
+      })
+    }
+  }
+
+  /*
+     Methode qui transforme un Domain en Map[String, Any]
+   */
+  def domainToMapOfAny(implicit DomainInstance: AnyRef): Map[String, Any] = {
     (Map[String, Any]() /: DomainInstance.getClass.getDeclaredFields) { (a, f) =>
       f.setAccessible(true)
       a + (f.getName -> f.get(DomainInstance))
@@ -95,6 +109,14 @@ trait Domain {
 
   }
 
+    /*
+    Methode qui valide d'abord le modele, puis qui l'enregistre dans la bdd
+     */
+  def checkAndSave(classInstance: AnyRef): Any = {
+    val db: DbOperationService = DbOperationService
+    return db.checkAndSave(classInstance)
+
+  }
 
 }
 
@@ -109,10 +131,25 @@ class DomainAnyRef(anyClass: AnyRef) {
 
   }
 
-  def toMap(): Map[String, Any] = {
+  def toMap(): Map[String, String] = {
     if (anyClass.isInstanceOf[Domain]) {
       val domain = anyClass.asInstanceOf[Domain]
       return domain.domainToMap(domain)
+    } else Map("Domain" -> "class.not.a.Domain")
+  }
+
+  def toMapOfAny(): Map[String, Any] = {
+    if (anyClass.isInstanceOf[Domain]) {
+      val domain = anyClass.asInstanceOf[Domain]
+      return domain.domainToMapOfAny(domain)
+    } else Map("Domain" -> "class.not.a.Domain")
+  }
+
+
+  def validateAndSave(): Any = {
+    if (anyClass.isInstanceOf[Domain]) {
+      val domain = anyClass.asInstanceOf[Domain]
+      return domain.checkAndSave(domain)
     } else Map("Domain" -> "class.not.a.Domain")
   }
 }

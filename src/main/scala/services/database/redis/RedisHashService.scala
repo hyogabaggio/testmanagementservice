@@ -11,16 +11,21 @@ trait RedisHashService extends RedisService {
   Afin de pouvoir les incrementer, les ids sont gérés dans une autre table,
   une table de type String. Lors de chaque save, on incremente cette table, et la valeur retournée sera l'id de la nouvelle entrée
    */
-  def save(dataMap: Map[String, Any], classId: String): Any = {
+  def save(dataMap: Map[String, String], classId: String): Any = {
     // On incremente la table des ids afin de recuperer le nouvel id pour cet enregistrement
     var idValue: Long = 0
     redisClient.incr(classId).map { id =>
-      Console.println("id = " + id)
       idValue = id;
+      Console.println("idValue = " + idValue)
+      //On determine l'id à enregistrer, puis on le set au niveau du Map
+      val key = determineId(classId, idValue)
+      val dataMapToSave = setIdToDomain(dataMap, key)
+      Console.println("dataMapToSave = " + dataMapToSave)
+      redisClient.hmset(key, dataMapToSave).map { rslt =>
+        Console.println("rslt = " + rslt)
+        //return rslt     // le return plante la chose
+      }
     }
-    //On determine l'id à enregistrer, puis on le set au niveau du Map
-    val dataMapToSave = setIdToDomain(dataMap, determineId(classId, idValue))
-    Console.println("dataMapToSave = " + dataMapToSave)
 
   }
 
@@ -34,16 +39,17 @@ trait RedisHashService extends RedisService {
    Si elle n'en contient pas, on lui rajoute juste la valeur.
    Ex: "users" => "users:11".
    */
+  //TODO imposer la forme "users:id", une requette http ne contient pas de ':'
   def determineId(classId: String, idValue: Long): String = {
     var classIdCopy = classId
-    if (classId.contains("id")) classIdCopy.replace("id", idValue.toString)
+    if (classId.contains("id")) classIdCopy = classIdCopy.replace("id", idValue.toString)
     else {
       classIdCopy += ":" + idValue.toString
     }
     return classIdCopy
   }
 
-  def setIdToDomain(dataMap: Map[String, Any], classId: String): Map[String, Any] = {
+  def setIdToDomain(dataMap: Map[String, String], classId: String): Map[String, String] = {
     var dataMapCopy = dataMap
     dataMapCopy += "id" -> classId
     return dataMapCopy

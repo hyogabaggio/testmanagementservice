@@ -30,13 +30,13 @@ trait RedisService {
   Le type de structure (dataStructure) est requis, afin de savoir dans quel type de table l'enregistrement aura lieu. Cette valeur est stockée dans chaque model, propriété "redisStructure".
   Le type de classe (className) est aussi requis, afin de gerer l'incrementation des ids. Redis ne les incremente pas automatiquement, so, ces ids sont gérés dans une table à part, de type String. Avant chaque save, une entrée du genre <<id:className>> est enregistrée, Ex: 2:Users, l'id etant incrementé. Cet id sera l'id du nouvel enregistrement à faire.
    */
-  def save(dataMap: Map[String, Any], dataStructure: String, classId: String): Any = {
+  def save(dataMap: Map[String, String], dataStructure: String, classId: String): Any = {
 
     //Save dans redis
     dataStructure match {
       case "hash" => {
         val redisHashService: RedisHashService = RedisHashService
-
+        redisHashService.save(dataMap, classId)
       }
       case _ => None
 

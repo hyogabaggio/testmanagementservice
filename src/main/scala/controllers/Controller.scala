@@ -1,6 +1,7 @@
 package controllers
 
 import models.{Domain, Users}
+import utilities.Tools
 
 /**
  * Created by hyoga on 28/10/2014.
@@ -72,27 +73,23 @@ trait Controller {
     => userInstance.prenom = Roby
    */
   def binding(classInstance: AnyRef, params: Map[String, Any]): AnyRef = {
-    params.map(kv => bindingFromPair(kv, classInstance))
+    val tools = new Tools
+    tools.binding(classInstance, params)
+    //params.map(kv => bindingFromPair(kv, classInstance))
     return classInstance
   }
 
   /*
-      Methode permettant de faire un binding entre une pair "key-value" et un modele.
-      Un modele est une case class contenue dans le package Models.
-      La pair contient le nom de propriété en key et la valeur de la propriété en value.
-
-      Ex: Model: userInstance:User(nom:String, prenom:String)
-      Pair: kv:Pair(nom, "Baggio")
-      bindingFromPair(kv, userInstance)
-        => userInstance.nom = Baggio
+  Même methode que binding.
+  Sauf que le params qui vient contient une map "httpbody". Il faut d'abord l'extraire, puis le binder.
    */
-  def bindingFromPair(kv: (String, Any), classInstance: AnyRef): AnyRef = {
-    if (classInstance.isInstanceOf[Domain])
-      classInstance.asInstanceOf[Domain].getSet(classInstance) set(kv._1.toString, kv._2)
-
-    // ne marche que sur les string, et encore, pas sur les option[string]
-    //TODO voir http://stackoverflow.com/questions/1589603/scala-set-a-field-value-reflectively-from-field-name
+  def extractHttpbodyAndBind(classInstance: AnyRef, params: Map[String, Any]): AnyRef = {
+    val tools = new Tools
+    tools.extractHttpbodyAndBind(classInstance, params)
+    /* var mapHttpbody = tools.getType(params.get("httpbody")).asInstanceOf[Map[String, Any]]
+     mapHttpbody.map(kv => bindingFromPair(kv, classInstance))  */
     return classInstance
   }
+
 
 }

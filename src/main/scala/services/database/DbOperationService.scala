@@ -41,7 +41,7 @@ trait DbOperationService {
         // On le transforme en Map car la methode de save de Redis ne prend en argument que des Iterable
 
         val dataMap = dataModel.toMap()
-        // Console.println("dataMap = "+dataMap)
+         Console.println("dataMap tostring= "+dataMap)
 
         //Save dans Redis
         //On recupere le type de datastructure et l'id
@@ -55,6 +55,15 @@ trait DbOperationService {
         else if (!new Constantes {}.datastructures.contains(redisStructure)) return "redisStructure.not.valid"
 
         redisService.save(dataMap, redisStructure.toString, redisId.toString)
+        /* idée: vu que le save se passe via un actor, donc avec un autre thread, so pourquoi ne pas, aprés la validation du modéle,
+        juste renvoyer true, i.e considerer que dès que la validation est ok, le save se passera bien ? Gain en rapidité.
+        Ajouter une sorte de Cron qui repassera sur les save qui ont echoué et fera something
+
+        ERROR eue:
+        [ERROR] [01/04/2015 15:51:35.964] [bossSystem-akka.actor.default-dispatcher-8] [ActorSystem(bossSystem)] Uncaught error from thread [bossSystem-akka.actor.default-dispatcher-8] (scala.runtime.NonLocalReturnControl$mcZ$sp)
+         */
+        //TODO considerer l'idée juste au dessus
+        return true
 
       }
       case _ => return dataModel.validate()

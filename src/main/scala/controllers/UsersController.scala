@@ -39,6 +39,9 @@ class UsersController extends Controller {
 
   def show(params: Map[String, Any]):Any = {
     Console.println("show params = " + params)
+             val user = new Users()
+    var tools = new Tools()
+    user.get(tools.getType(params.get("id")).asInstanceOf[String])
   }
 
 

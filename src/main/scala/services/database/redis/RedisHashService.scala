@@ -30,6 +30,15 @@ trait RedisHashService extends RedisService {
   }
 
 
+  def findByKey(classType: String, id: String): Any = {
+    val key = classType.toLowerCase + ':' + id
+    Console.println("key = " + key)
+    redisClient.hgetall(key).map{ rslt =>
+      Console.println("rslt = " + rslt)
+    }
+  }
+
+
   /*
   Methode qui determine l'id du nouvel enregistrement.
   Sa structure est stockée au niveau du Domain (champ redisId)

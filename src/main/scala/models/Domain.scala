@@ -109,14 +109,26 @@ trait Domain {
 
   }
 
-    /*
-    Methode qui valide d'abord le modele, puis qui l'enregistre dans la bdd
-     */
+  /*
+  Methode qui valide d'abord le modele, puis qui l'enregistre dans la bdd
+   */
   def checkAndSave(classInstance: AnyRef): Any = {
     val db: DbOperationService = DbOperationService
     return db.checkAndSave(classInstance)
 
   }
+
+
+  /*
+  Methode qui recherche un enregistrement via l'ID
+   */
+  //TODO proteger l'acces à ces methodes par protected ou private
+    def getById(classInstance: AnyRef, id: String): Any = {
+    val db: DbOperationService = DbOperationService
+     Console.println("classInstance getName = "+classInstance.getClass.getSimpleName)
+    db.getById(classInstance, classInstance.getClass.getSimpleName, id)
+  }
+
 
 }
 
@@ -151,6 +163,13 @@ class DomainAnyRef(anyClass: AnyRef) {
       val domain = anyClass.asInstanceOf[Domain]
       return domain.checkAndSave(domain)
     } else Map("Domain" -> "class.not.a.Domain")
+  }
+
+   def get(id: String): Any = {
+    if (anyClass.isInstanceOf[Domain]) {
+      val domain = anyClass.asInstanceOf[Domain]
+      return domain.getById(domain, id)
+    }
   }
 }
 

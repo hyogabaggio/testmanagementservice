@@ -71,6 +71,19 @@ trait DbOperationService {
 
 
   }
+
+  /*
+  Methode qui recherche un enregistrement via l'id
+   */
+  def getById(dataModel: AnyRef, classType: String, id:String):Any = {
+    val redisStructure = dataModel.asInstanceOf[Domain].getSet(dataModel) get ("redisStructure")
+    // On s'assure que redisStructure n'est pas nul
+    //Et que la dataStructure envoyée est contenue dans la liste des dataStructure acceptées par l'appli
+    if (redisStructure == null || redisStructure == "") return "redisStructure.or.redisId.not.found"
+    else if (!new Constantes {}.datastructures.contains(redisStructure)) return "redisStructure.not.valid"
+
+    redisService.findByKey(redisStructure.toString, classType, id)
+  }
 }
 
 

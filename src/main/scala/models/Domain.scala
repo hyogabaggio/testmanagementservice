@@ -1,6 +1,5 @@
 package models
 
-import com.sun.tools.internal.xjc.api.util.ToolsJarNotFoundException
 import services.database.DbOperationService
 import utilities.{Constantes, Tools}
 
@@ -113,9 +112,9 @@ trait Domain {
   Methode qui valide d'abord le modele, puis qui l'enregistre dans la bdd
    */
   def checkAndSave(classInstance: AnyRef): Any = {
-    val db: DbOperationService = DbOperationService
-    return db.checkAndSave(classInstance)
-
+   // val db: DbOperationService = new DbOperationService
+   // return db.checkAndSave(classInstance)
+              //TODO regler le DbOperationService en actor
   }
 
 
@@ -124,9 +123,10 @@ trait Domain {
    */
   //TODO proteger l'acces à ces methodes par protected ou private
     def getById(classInstance: AnyRef, id: String): Any = {
-    val db: DbOperationService = DbOperationService
+  /*  val db: DbOperationService = DbOperationService
      Console.println("classInstance getName = "+classInstance.getClass.getSimpleName)
-    db.getById(classInstance, classInstance.getClass.getSimpleName, id)
+    db.getById(classInstance, classInstance.getClass.getSimpleName, id)    */
+    //TODO regler le DbOperationService en actor
   }
 
 

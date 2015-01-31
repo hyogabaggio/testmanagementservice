@@ -38,3 +38,8 @@ object FailureType extends Enumeration {
   val DatabaseFailure = Value("database_error")
   val InternalError = Value("internal_error")
 }
+
+
+case class Error(message: String)
+
+case class Validation(message: String)

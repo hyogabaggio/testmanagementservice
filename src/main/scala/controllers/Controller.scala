@@ -1,7 +1,9 @@
 package controllers
 
+import akka.actor.SupervisorStrategy.Escalate
+import akka.actor.{OneForOneStrategy, Props, ActorRef, Actor}
 import models.{Domain, Users}
-import utilities.Tools
+import utilities.{Validation, Tools}
 
 /**
  * Created by hyoga on 28/10/2014.
@@ -12,8 +14,33 @@ import utilities.Tools
  *
  * Elle gere aussi la sécurité (authentification)
  */
-trait Controller {
+class Controller(dbService: ActorRef) extends Actor {
 
+  var booleanResult = Option.empty[Boolean]
+  var mapResult = Option.empty[Map[String, String]]
+  var listResult = Option.empty[Seq[Map[String, String]]]
+
+  def receive = {
+    case data: Map[String, Any] => {
+      val methodController = getControllerMethod(data)
+
+      if (data.isInstanceOf[Map[String, Any]]) {
+
+        //on recupere les valeurs contenues dans la requete
+        val params = data.asInstanceOf[Map[String, Any]]
+        val controller = params("httpcontroller").toString()
+        Console.println("this  = " + this.getClass())
+        Console.println("super  = " + super.getClass)
+        val controllerInstance = this //TODO faire le test avec plusieurs controllers pour confirmer.
+        //on execute la methode appelée (save, show, list, update, delete ou une action spécifique)
+        triggerControllerMethod(controllerInstance, params) // TODO faut-il que cet appel soit via un acteur pour avoir une reponse via le context ?
+        Console.println("after triggerControllerMethod  = ")
+
+        context.become(waitingResponses)
+      }
+    }
+
+  }
 
   /*
   Methode recuperant tous les elements reçus par une methode d'un controller, sous forme de map.
@@ -22,7 +49,7 @@ trait Controller {
 
   //TODO ne pas oublier la sécurité. Essayer de gerer ça façon GrailsFilter
 
-  def receive(params: Map[String, Any]) = {
+  def triggerControllerMethod(params: Map[String, Any]) = {
     // recuperation du controller visé
     val controller = params("httpcontroller").toString()
     val specificAction = params.get("httpactionspecific")
@@ -33,7 +60,21 @@ trait Controller {
     } else {
       // Pas d'action specifique, donc action http
       callMethod(controller, params("httpaction").toString(), params)
+    }
+  }
 
+
+  def triggerControllerMethod(controllerInstance: Any, params: Map[String, Any]) = {
+    // recuperation du controller visé
+    val controller = controllerInstance
+    val specificAction = params.get("httpactionspecific")
+    // Console.println("Controller specificAction = " + specificAction)
+    //Si une action specifique a été demandée, elle prend le dessus sur les actions HTTP
+    if (specificAction != None) {
+      callMethod(controller, specificAction.toString(), params)
+    } else {
+      // Pas d'action specifique, donc action http
+      callMethod(controller, params("httpaction").toString(), params)
     }
   }
 
@@ -58,6 +99,31 @@ trait Controller {
     val classInstance = createInstance(className)
     val method = classInstance.getClass.getMethod(methodName, classOf[Map[String, Any]])
     if (method != None) method.invoke(classInstance, argsMethod)
+  }
+
+  /*
+  Même methode que précédemment (même principe d'appel de methode via un variable. Mais ici la classe est déjà instanciée
+   */
+  def callMethod(classInstance: Any, methodName: String, argsMethod: Map[String, Any]): Unit = {
+
+    val method = classInstance.getClass.getMethod(methodName, classOf[Map[String, Any]])
+    if (method != None) method.invoke(classInstance, argsMethod)
+  }
+
+  /*
+  Methode qui renvoie le nom de la methode du controlleur qui doit être attaquée en recevant une map du RoutingActor.
+  La map contient toutes les données envoyées par le client vers l'API, dont le nom du controller ainsi que la methode visée
+   */
+  def getControllerMethod(params: Map[String, Any]): String = {
+    val specificAction = params.get("httpactionspecific")
+    // Console.println("Controller specificAction = " + specificAction)
+    //Si une action specifique a été demandée, elle prend le dessus sur les actions HTTP
+    if (specificAction != None) {
+      return specificAction.toString()
+    } else {
+      // Pas d'action specifique, donc action http
+      return params("httpaction").toString()
+    }
   }
 
 
@@ -91,5 +157,49 @@ trait Controller {
     return classInstance
   }
 
+
+  /*
+  Dès que la methode 'Receive' déclenchée arrive à sa 'fin' (context.become(waitingResponses)), cette methode 'waitingResponses' est appelée, et recevra les reponses reçues des appels effectués par 'Receive'.
+  Tous les appels de 'Receive' sont vers le Controller. Donc les methodes appelées sont save, show, list, update, delete ainsi que les methodes spécifiques.
+  Pour le moment, on suppose que les types de retour sont:
+    - Boolean: methodes de sauvegarde dans la bdd: save, update, delete
+    - Map[String, String]: methodes ne renvoyant qu'un enregistrement dans la bdd (get): show
+    - List[Map[String, String]]: methodes de recherche dans la bdd, et renvoyant plusieurs résultats: list
+
+    TODO veiller à confirmer cette hypothese avec les méthodes specifiques
+
+    'replyIfReady' retourne les reponses à l'envoyeur
+   */
+  def waitingResponses: Receive = {
+    case booleanresult: Boolean => {
+      booleanResult = Some(booleanresult)
+      replyIfReady
+    }
+    case mapresult: Map[String, String] => {
+      mapResult = Some(mapresult)
+      replyIfReady
+    }
+    case listresult: Seq[Map[String, String]] => {
+      listResult = Some(listresult)
+      replyIfReady
+    }
+    case f: Validation => context.parent ! f
+  }
+
+
+  def replyIfReady = {
+    Console.println("booleanResult  = " + booleanResult)
+    Console.println("mapResult  = " + mapResult)
+    Console.println("listResult  = " + listResult)
+
+    if (booleanResult.nonEmpty) context.parent ! booleanResult
+    else if (mapResult.nonEmpty) context.parent ! mapResult
+    else if (listResult.nonEmpty) context.parent ! listResult
+  }
+
+  override val supervisorStrategy =
+    OneForOneStrategy() {
+      case _ => Escalate
+    }
 
 }

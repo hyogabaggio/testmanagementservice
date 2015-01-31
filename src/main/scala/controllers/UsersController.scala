@@ -1,6 +1,7 @@
 package controllers
 
-import models.{TestQuestion, Users}
+import akka.actor.ActorRef
+import models.{Users}
 import net.liftweb.json.Serialization._
 import net.liftweb.json.{NoTypeHints, Serialization}
 import services.database.DbOperationService
@@ -10,11 +11,25 @@ import models.Conversions.domainToAnyRef
 /**
  * Created by hyoga on 23/11/2014.
  */
-class UsersController extends Controller {
+class UsersController(dbService:ActorRef) extends Controller(dbService) {
 
   /*
   Actions: save, show, list, update, delete
    */
+
+  /*def receive = {
+    case data => {
+      if (data.isInstanceOf[Map[String, Any]]) {
+
+        //on recupere les valeurs contenues dans la requete
+        val params = data.asInstanceOf[Map[String, Any]]
+        //on execute la methode appelée (save, show, list, update, delete ou une action spécifique)
+        triggerControllerMethod(this, params)
+
+       // context.become(waitingResponses)
+      }
+    }
+  }    */
 
   def save(params: Map[String, Any]): Any = {
     var user: Users = new Users()
@@ -26,10 +41,11 @@ class UsersController extends Controller {
 
     if (user.validate.isEmpty) Console.println("is valide = true")
     else Console.println("is valide = false")
+    return true
     //val save = db.checkAndSave(user)
-    val save = user.validateAndSave
+  /*  val save = user.validateAndSave
     Console.println("save = " + save)
-    return save
+    return save */
   }
 
   def update(params: Map[String, Any]): Any = {
@@ -37,9 +53,9 @@ class UsersController extends Controller {
 
   }
 
-  def show(params: Map[String, Any]):Any = {
+  def show(params: Map[String, Any]): Any = {
     Console.println("show params = " + params)
-             val user = new Users()
+    val user = new Users()
     var tools = new Tools()
     user.get(tools.getType(params.get("id")).asInstanceOf[String])
   }

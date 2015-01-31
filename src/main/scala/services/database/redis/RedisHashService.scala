@@ -1,5 +1,9 @@
 package services.database.redis
 
+
+import scala.concurrent.{Promise, Await, Future}
+import scala.util.{Success, Failure}
+
 /**
  * Created by hyoga on 14/12/2014.
  * Classe qui effectue les transactions vers la bdd Redis, mais ne gére que les tables de type Hash
@@ -12,6 +16,7 @@ trait RedisHashService extends RedisService {
   une table de type String. Lors de chaque save, on incremente cette table, et la valeur retournée sera l'id de la nouvelle entrée
    */
   def save(dataMap: Map[String, String], classId: String): Any = {
+    import akka.pattern.after
     // On incremente la table des ids afin de recuperer le nouvel id pour cet enregistrement
     var idValue: Long = 0
     redisClient.incr(classId).map { id =>
@@ -21,10 +26,31 @@ trait RedisHashService extends RedisService {
       val key = determineId(classId, idValue)
       val dataMapToSave = setIdToDomain(dataMap, key)
       Console.println("dataMapToSave = " + dataMapToSave)
-      redisClient.hmset(key, dataMapToSave).map { rslt =>
-        Console.println("rslt = " + rslt)
-        //return rslt     // le return plante la chose
+      val execSaving = redisClient.hmset(key, dataMapToSave)
+      /*  val mapResult = for {
+          result <- redisClient.hmset(key, dataMapToSave).mapTo[Boolean]
+        } yield result  */
+      /*  val delayed = after(timeout.duration, using = system.scheduler)(Future.failed(new IllegalStateException("OHNOES")))
+        val future = Future {
+          Thread.sleep(3000);
+          true;
+        }     */
+      Console.println("execSaving before = " + execSaving.value)
+      val result = Promise[Boolean]
+      execSaving onComplete {
+        case Success(true) => result.success(true)
+        case Failure(error) => result.failure(/*new Exception("database.redis.error")*/error)
       }
+
+     Console.println("rslt = " + result.future.value)
+
+       result.future
+      Console.println("rslt after = " + result.future.value)
+      Console.println("execSaving after = " + execSaving.value)
+
+
+      // return result
+
     }
 
   }
@@ -33,7 +59,7 @@ trait RedisHashService extends RedisService {
   def findByKey(classType: String, id: String): Any = {
     val key = classType.toLowerCase + ':' + id
     Console.println("key = " + key)
-    redisClient.hgetall(key).map{ rslt =>
+    redisClient.hgetall(key).map { rslt =>
       Console.println("rslt = " + rslt)
     }
   }

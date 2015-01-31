@@ -6,6 +6,9 @@ import akka.util.Timeout
 import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
 import utilities.{Tools, ActorSystemProvider}
+import scala.concurrent.duration._
+
+import scala.concurrent.{Promise, Future}
 
 /**
  * Created by hyoga on 07/12/2014.
@@ -18,7 +21,9 @@ trait RedisService {
   val actorSystemProvider: ActorSystemProvider = ActorSystemProvider
   implicit val system = actorSystemProvider.system
   implicit val executionContext = system.dispatcher
+  // TODO new executionContext dédié à Redis, voir akka
   implicit val timeout = Timeout(2, TimeUnit.SECONDS)
+  //implicit val timeout = 2.seconds
 
   //Connection à Redis
   val tools = new Tools
@@ -36,9 +41,11 @@ trait RedisService {
     dataStructure match {
       case "hash" => {
         val redisHashService: RedisHashService = RedisHashService
-        redisHashService.save(dataMap, classId)
+        return redisHashService.save(dataMap, classId)
       }
-      case _ => None
+      case _ => return Future {
+        false
+      }
 
     }
 

@@ -1,6 +1,6 @@
 package routes
 
-import akka.actor.Actor
+import akka.actor.{Props, Actor}
 import controllers.Controller
 import models._
 import net.liftweb.json.Serialization._
@@ -58,11 +58,13 @@ class RoutingActor extends Actor with RoutingService {
  *
  **/
 
-trait RoutingService extends HttpService {
+trait RoutingService extends HttpService with Actor with ControllerPerRequestCreator {
   // we use the enclosing ActorContext's or ActorSystem's dispatcher for our Futures and Scheduler
   implicit def executionContext = actorRefFactory.dispatcher
 
   implicit val formats = DefaultFormats
+
+  val dbService = actorRefFactory.actorOf(Props[DbOperationService])
 
   implicit val customRejectionHandler = RejectionHandler {
     case rejections => mapHttpResponse {
@@ -92,7 +94,7 @@ trait RoutingService extends HttpService {
 
   //TODO inserer un logger (log4j ou autre)
 
-  val fmt = DateTimeFormat.forPattern("yyMMddHHmmssSSS")
+  //val fmt = DateTimeFormat.forPattern("yyMMddHHmmssSSS")
   //possiblement inutile
   val testmanagementRoute = respondWithMediaType(MediaTypes.`application/json`) {
     pathPrefix("api") {
@@ -104,13 +106,19 @@ trait RoutingService extends HttpService {
             // Tout le reste de l'application ne manipulera que ce map
             //  Console.println("ctx.request= " + ctx.request)
             val httpmap = httpToMap(ctx.request)
-            //  Console.println("GET MAP = " + httpmap)
             // On envoie httpmap au 'Controller Global'. Lui se chargera d'identifier le controller visé et de lui envoyer les données
 
             // TODO gerer les valeurs retournées par Controller.receive
-            val controller = new Controller {}
-            controller.receive(httpmap)
-
+            //  val controller = new Controller {}
+            // controller.triggerControllerMethod(httpmap)
+            val controller = httpmap("httpcontroller").toString()
+            // Console.println("sendMessageToController = " + controller)
+             perRequest(ctx, Props(Class.forName(controller).getConstructors()(0).newInstance(dbService).asInstanceOf[Actor]), httpmap)
+           // perRequest(ctx, Props(new Controller(dbService)), httpmap)
+            /* sendMessageToController{
+               httpmap
+             }   */
+            //TODO finir la methode avec perRequest, i.e effacer tout ce qui vient aprés cette ligne
             var domain = httpmap.get("httpdomain")
             var method = httpmap.get("httpmethod").toString().toUpperCase()
             //TODO partout, retourner en erreur si: pas httpmap.httpaction et httpactionspecific, pas httpmap.httpcontroller
@@ -120,6 +128,17 @@ trait RoutingService extends HttpService {
         }
       }
     }
+  }
+
+  //inutilisé
+  def sendMessageToController(message: Map[String, Any]): Route = {
+    ctx =>
+      Console.println("sendMessageToController getClass = " + ctx.getClass)
+      val controller = message("httpcontroller").toString()
+      Console.println("sendMessageToController = " + controller)
+      perRequest(ctx, Props(Class.forName(controller).getConstructors()(0).newInstance(dbService).asInstanceOf[Actor]), message)
+
+
   }
 
 

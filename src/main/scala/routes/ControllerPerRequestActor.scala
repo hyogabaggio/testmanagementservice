@@ -37,7 +37,9 @@ trait ControllerPerRequestActor extends Actor with Json4sSupport{
   target ! message
 
   def receive = {
-    case res: Map[String, Any] => complete(OK, res)
+    case res: Option[Map[String, Any]] => complete(OK, res)
+    case res: Option[Boolean] => complete(OK, res)
+    case res: Option[Seq[Map[String, String]]] => complete(OK, res)
     case v: Validation => complete(BadRequest, v)
     case ReceiveTimeout => complete(GatewayTimeout, Error("Request timeout"))
   }

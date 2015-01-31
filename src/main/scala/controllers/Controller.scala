@@ -16,13 +16,9 @@ import utilities.{Validation, Tools}
  */
 class Controller(dbService: ActorRef) extends Actor {
 
-  var booleanResult = Option.empty[Boolean]
-  var mapResult = Option.empty[Map[String, String]]
-  var listResult = Option.empty[Seq[Map[String, String]]]
 
   def receive = {
     case data: Map[String, Any] => {
-      val methodController = getControllerMethod(data)
 
       if (data.isInstanceOf[Map[String, Any]]) {
 
@@ -33,10 +29,9 @@ class Controller(dbService: ActorRef) extends Actor {
         Console.println("super  = " + super.getClass)
         val controllerInstance = this //TODO faire le test avec plusieurs controllers pour confirmer.
         //on execute la methode appelée (save, show, list, update, delete ou une action spécifique)
-        triggerControllerMethod(controllerInstance, params) // TODO faut-il que cet appel soit via un acteur pour avoir une reponse via le context ?
-        Console.println("after triggerControllerMethod  = ")
+        sender() ! triggerControllerMethod(controllerInstance, params) // TODO faut-il que cet appel soit via un acteur pour avoir une reponse via le context ?
 
-        context.become(waitingResponses)
+
       }
     }
 
@@ -49,7 +44,7 @@ class Controller(dbService: ActorRef) extends Actor {
 
   //TODO ne pas oublier la sécurité. Essayer de gerer ça façon GrailsFilter
 
-  def triggerControllerMethod(params: Map[String, Any]) = {
+  def triggerControllerMethod(params: Map[String, Any]): Any = {
     // recuperation du controller visé
     val controller = params("httpcontroller").toString()
     val specificAction = params.get("httpactionspecific")
@@ -95,7 +90,7 @@ class Controller(dbService: ActorRef) extends Actor {
 
      Methode qui instancie une classe (ici un controller) selon son nom relatif (package.nomClass), puis qui invoque une méthode selon son nom envoyé en parametre en lui transmettant des parametres sous forme de Map
    */
-  def callMethod(className: String, methodName: String, argsMethod: Map[String, Any]): Unit = {
+  def callMethod(className: String, methodName: String, argsMethod: Map[String, Any]): Any = {
     val classInstance = createInstance(className)
     val method = classInstance.getClass.getMethod(methodName, classOf[Map[String, Any]])
     if (method != None) method.invoke(classInstance, argsMethod)
@@ -104,26 +99,10 @@ class Controller(dbService: ActorRef) extends Actor {
   /*
   Même methode que précédemment (même principe d'appel de methode via un variable. Mais ici la classe est déjà instanciée
    */
-  def callMethod(classInstance: Any, methodName: String, argsMethod: Map[String, Any]): Unit = {
+  def callMethod(classInstance: Any, methodName: String, argsMethod: Map[String, Any]): Any = {
 
     val method = classInstance.getClass.getMethod(methodName, classOf[Map[String, Any]])
     if (method != None) method.invoke(classInstance, argsMethod)
-  }
-
-  /*
-  Methode qui renvoie le nom de la methode du controlleur qui doit être attaquée en recevant une map du RoutingActor.
-  La map contient toutes les données envoyées par le client vers l'API, dont le nom du controller ainsi que la methode visée
-   */
-  def getControllerMethod(params: Map[String, Any]): String = {
-    val specificAction = params.get("httpactionspecific")
-    // Console.println("Controller specificAction = " + specificAction)
-    //Si une action specifique a été demandée, elle prend le dessus sur les actions HTTP
-    if (specificAction != None) {
-      return specificAction.toString()
-    } else {
-      // Pas d'action specifique, donc action http
-      return params("httpaction").toString()
-    }
   }
 
 
@@ -157,49 +136,5 @@ class Controller(dbService: ActorRef) extends Actor {
     return classInstance
   }
 
-
-  /*
-  Dès que la methode 'Receive' déclenchée arrive à sa 'fin' (context.become(waitingResponses)), cette methode 'waitingResponses' est appelée, et recevra les reponses reçues des appels effectués par 'Receive'.
-  Tous les appels de 'Receive' sont vers le Controller. Donc les methodes appelées sont save, show, list, update, delete ainsi que les methodes spécifiques.
-  Pour le moment, on suppose que les types de retour sont:
-    - Boolean: methodes de sauvegarde dans la bdd: save, update, delete
-    - Map[String, String]: methodes ne renvoyant qu'un enregistrement dans la bdd (get): show
-    - List[Map[String, String]]: methodes de recherche dans la bdd, et renvoyant plusieurs résultats: list
-
-    TODO veiller à confirmer cette hypothese avec les méthodes specifiques
-
-    'replyIfReady' retourne les reponses à l'envoyeur
-   */
-  def waitingResponses: Receive = {
-    case booleanresult: Boolean => {
-      booleanResult = Some(booleanresult)
-      replyIfReady
-    }
-    case mapresult: Map[String, String] => {
-      mapResult = Some(mapresult)
-      replyIfReady
-    }
-    case listresult: Seq[Map[String, String]] => {
-      listResult = Some(listresult)
-      replyIfReady
-    }
-    case f: Validation => context.parent ! f
-  }
-
-
-  def replyIfReady = {
-    Console.println("booleanResult  = " + booleanResult)
-    Console.println("mapResult  = " + mapResult)
-    Console.println("listResult  = " + listResult)
-
-    if (booleanResult.nonEmpty) context.parent ! booleanResult
-    else if (mapResult.nonEmpty) context.parent ! mapResult
-    else if (listResult.nonEmpty) context.parent ! listResult
-  }
-
-  override val supervisorStrategy =
-    OneForOneStrategy() {
-      case _ => Escalate
-    }
 
 }

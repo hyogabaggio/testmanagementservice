@@ -1,7 +1,7 @@
 package routes
 
 import akka.actor.{Props, Actor}
-import controllers.Controller
+import controllers.{ControllerMasterProcess, Controller}
 import models._
 import net.liftweb.json.Serialization._
 import net.liftweb.json._
@@ -111,20 +111,18 @@ trait RoutingService extends HttpService with Actor with ControllerPerRequestCre
             // TODO gerer les valeurs retournées par Controller.receive
             //  val controller = new Controller {}
             // controller.triggerControllerMethod(httpmap)
-            val controller = httpmap("httpcontroller").toString()
+           /* val controller = httpmap("httpcontroller").toString()
             // Console.println("sendMessageToController = " + controller)
-             perRequest(ctx, Props(Class.forName(controller).getConstructors()(0).newInstance(dbService).asInstanceOf[Actor]), httpmap)
-           // perRequest(ctx, Props(new Controller(dbService)), httpmap)
-            /* sendMessageToController{
-               httpmap
-             }   */
+           //  perRequest(ctx, Props(Class.forName(controller).getConstructors()(0).newInstance(dbService).asInstanceOf[Actor]), httpmap) */
+            perRequest(ctx, Props(new ControllerMasterProcess(dbService)), httpmap)
+
             //TODO finir la methode avec perRequest, i.e effacer tout ce qui vient aprés cette ligne
-            var domain = httpmap.get("httpdomain")
+           /* var domain = httpmap.get("httpdomain")
             var method = httpmap.get("httpmethod").toString().toUpperCase()
             //TODO partout, retourner en erreur si: pas httpmap.httpaction et httpactionspecific, pas httpmap.httpcontroller
             //TODO gerer les erreurs avec customRejectionHandler
 
-            ctx.complete(raw"$method $domain OK  ")
+            ctx.complete(raw"$method $domain OK  ")    */
         }
       }
     }

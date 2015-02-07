@@ -27,7 +27,7 @@ trait RedisService {
 
   //Connection à Redis
   val tools = new Tools
-  val redisClient = RedisClient(tools.getRedisUrl, tools.getRedisPort)
+  val redisClient = new RedisClient(tools.getRedisUrl, tools.getRedisPort)
 
   /*
   Methode de save de toute entrée dans Redis.
@@ -42,9 +42,6 @@ trait RedisService {
       case "hash" => {
         val redisHashService: RedisHashService = RedisHashService
         return redisHashService.save(dataMap, classId)
-      }
-      case _ => return Future {
-        false
       }
 
     }

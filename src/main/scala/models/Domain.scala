@@ -1,7 +1,7 @@
 package models
 
 import services.database.DbOperationService
-import utilities.{Constantes, Tools}
+import utilities.{Validation, Constantes, Tools}
 
 /**
  * Created by hyoga on 30/11/2014.
@@ -57,13 +57,14 @@ trait Domain {
   Methode de validation des models.
   Elle est plus une methode d'accés. Elle boucle sur l'ensemble des propriétés du model, et appelle la methode de validation (checkValidation) sur chacune d'elles.
    */
-  def validateDomain(implicit classInstance: AnyRef): Map[String, String] = {
+  def validateDomain(implicit classInstance: AnyRef): Option[Validation] /*Map[String, String]*/ = {
     var errorsMap: Map[String, String] = Map()
     val listFields = classInstance.getClass.getDeclaredFields().map(_.getName)
     listFields.map(field => {
       if (checkValidation(classInstance, field)._1 != "none") errorsMap += checkValidation(classInstance, field)
     })
-    return errorsMap
+    if (errorsMap.isEmpty) return None
+    else return Some(new Validation(errorsMap))
   }
 
   /*
@@ -112,9 +113,8 @@ trait Domain {
   Methode qui valide d'abord le modele, puis qui l'enregistre dans la bdd
    */
   def checkAndSave(classInstance: AnyRef): Any = {
-   // val db: DbOperationService = new DbOperationService
-   // return db.checkAndSave(classInstance)
-              //TODO regler le DbOperationService en actor
+    val db: DbOperationService = new DbOperationService
+    return db.checkAndSave(classInstance)
   }
 
 
@@ -122,11 +122,10 @@ trait Domain {
   Methode qui recherche un enregistrement via l'ID
    */
   //TODO proteger l'acces à ces methodes par protected ou private
-    def getById(classInstance: AnyRef, id: String): Any = {
-  /*  val db: DbOperationService = DbOperationService
-     Console.println("classInstance getName = "+classInstance.getClass.getSimpleName)
-    db.getById(classInstance, classInstance.getClass.getSimpleName, id)    */
-    //TODO regler le DbOperationService en actor
+  def getById(classInstance: AnyRef, id: String): Any = {
+      val db: DbOperationService = new DbOperationService
+       Console.println("classInstance getName = "+classInstance.getClass.getSimpleName)
+      db.getById(classInstance, classInstance.getClass.getSimpleName, id)
   }
 
 
@@ -134,12 +133,12 @@ trait Domain {
 
 class DomainAnyRef(anyClass: AnyRef) {
 
-  def validate(): Map[String, String] = {
+  def validate(): Option[Validation] /*Map[String, String]*/ = {
     //  Console.println("is instance of ? = "+anyClass.isInstanceOf[Domain])
     if (anyClass.isInstanceOf[Domain]) {
       val domain = anyClass.asInstanceOf[Domain]
       return domain.validateDomain(domain)
-    } else Map("Domain" -> "class.not.a.Domain")
+    } else Some(new Validation(Map("Domain" -> "class.not.a.Domain")))
 
   }
 
@@ -162,10 +161,10 @@ class DomainAnyRef(anyClass: AnyRef) {
     if (anyClass.isInstanceOf[Domain]) {
       val domain = anyClass.asInstanceOf[Domain]
       return domain.checkAndSave(domain)
-    } else Map("Domain" -> "class.not.a.Domain")
+    } else Some(new Validation(Map("Domain" -> "class.not.a.Domain")))
   }
 
-   def get(id: String): Any = {
+  def get(id: String): Any = {
     if (anyClass.isInstanceOf[Domain]) {
       val domain = anyClass.asInstanceOf[Domain]
       return domain.getById(domain, id)

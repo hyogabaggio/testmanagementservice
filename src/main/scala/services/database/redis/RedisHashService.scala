@@ -1,6 +1,8 @@
 package services.database.redis
 
 
+import utilities.Tools
+
 import scala.concurrent.{Promise, Await, Future}
 import scala.util.{Success, Failure}
 
@@ -16,52 +18,22 @@ trait RedisHashService extends RedisService {
   une table de type String. Lors de chaque save, on incremente cette table, et la valeur retournée sera l'id de la nouvelle entrée
    */
   def save(dataMap: Map[String, String], classId: String): Any = {
-    import akka.pattern.after
     // On incremente la table des ids afin de recuperer le nouvel id pour cet enregistrement
-    var idValue: Long = 0
-    redisClient.incr(classId).map { id =>
-      idValue = id;
-      Console.println("idValue = " + idValue)
-      //On determine l'id à enregistrer, puis on le set au niveau du Map
-      val key = determineId(classId, idValue)
-      val dataMapToSave = setIdToDomain(dataMap, key)
-      Console.println("dataMapToSave = " + dataMapToSave)
-      val execSaving = redisClient.hmset(key, dataMapToSave)
-      /*  val mapResult = for {
-          result <- redisClient.hmset(key, dataMapToSave).mapTo[Boolean]
-        } yield result  */
-      /*  val delayed = after(timeout.duration, using = system.scheduler)(Future.failed(new IllegalStateException("OHNOES")))
-        val future = Future {
-          Thread.sleep(3000);
-          true;
-        }     */
-      Console.println("execSaving before = " + execSaving.value)
-      val result = Promise[Boolean]
-      execSaving onComplete {
-        case Success(true) => result.success(true)
-        case Failure(error) => result.failure(/*new Exception("database.redis.error")*/error)
-      }
-
-     Console.println("rslt = " + result.future.value)
-
-       result.future
-      Console.println("rslt after = " + result.future.value)
-      Console.println("execSaving after = " + execSaving.value)
-
-
-      // return result
-
-    }
-
+    var idValue = redisClient.incr(classId)
+    Console.println("idValue = " + idValue)
+    val key = determineId(classId, idValue)
+    val dataMapToSave = setIdToDomain(dataMap, key)
+    Console.println("dataMapToSave = " + dataMapToSave)
+    return redisClient.hmset(key, dataMapToSave)
   }
 
 
   def findByKey(classType: String, id: String): Any = {
     val key = classType.toLowerCase + ':' + id
     Console.println("key = " + key)
-    redisClient.hgetall(key).map { rslt =>
-      Console.println("rslt = " + rslt)
-    }
+    val rslt = redisClient.hgetall(key)
+    Console.println("rslt = " + rslt)
+    return rslt.get
   }
 
 
@@ -75,11 +47,11 @@ trait RedisHashService extends RedisService {
    Ex: "users" => "users:11".
    */
   //TODO imposer la forme "users:id", une requette http ne contient pas de ':'
-  def determineId(classId: String, idValue: Long): String = {
+  def determineId(classId: String, idValue: Option[Long]): String = {
     var classIdCopy = classId
-    if (classId.contains("id")) classIdCopy = classIdCopy.replace("id", idValue.toString)
+    if (classId.contains("id")) classIdCopy = classIdCopy.replace("id", idValue.get.toString) //TODO verifier dans le cas ou idValue ==None
     else {
-      classIdCopy += ":" + idValue.toString
+      classIdCopy += ":" + idValue.get.toString //TODO verifier dans le cas ou idValue ==None
     }
     return classIdCopy
   }

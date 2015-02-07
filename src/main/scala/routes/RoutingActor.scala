@@ -64,7 +64,7 @@ trait RoutingService extends HttpService with Actor with ControllerPerRequestCre
 
   implicit val formats = DefaultFormats
 
-  val dbService = actorRefFactory.actorOf(Props[DbOperationService])
+ // val dbService = actorRefFactory.actorOf(Props[DbOperationService])
 
   implicit val customRejectionHandler = RejectionHandler {
     case rejections => mapHttpResponse {
@@ -114,7 +114,7 @@ trait RoutingService extends HttpService with Actor with ControllerPerRequestCre
            /* val controller = httpmap("httpcontroller").toString()
             // Console.println("sendMessageToController = " + controller)
            //  perRequest(ctx, Props(Class.forName(controller).getConstructors()(0).newInstance(dbService).asInstanceOf[Actor]), httpmap) */
-            perRequest(ctx, Props(new ControllerMasterProcess(dbService)), httpmap)
+            perRequest(ctx, Props(new ControllerMasterProcess()), httpmap)
 
             //TODO finir la methode avec perRequest, i.e effacer tout ce qui vient aprés cette ligne
            /* var domain = httpmap.get("httpdomain")
@@ -134,7 +134,8 @@ trait RoutingService extends HttpService with Actor with ControllerPerRequestCre
       Console.println("sendMessageToController getClass = " + ctx.getClass)
       val controller = message("httpcontroller").toString()
       Console.println("sendMessageToController = " + controller)
-      perRequest(ctx, Props(Class.forName(controller).getConstructors()(0).newInstance(dbService).asInstanceOf[Actor]), message)
+    //  perRequest(ctx, Props(Class.forName(controller).getConstructors()(0).newInstance(dbService).asInstanceOf[Actor]), message)
+      perRequest(ctx, Props(Class.forName(controller).newInstance().asInstanceOf[Actor]), message)
 
 
   }

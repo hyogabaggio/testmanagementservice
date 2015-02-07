@@ -11,7 +11,7 @@ import models.Conversions.domainToAnyRef
 /**
  * Created by hyoga on 23/11/2014.
  */
-class UsersController(dbService:ActorRef) extends Controller(dbService) {
+class UsersController() extends Controller() {
 
   /*
   Actions: save, show, list, update, delete
@@ -41,11 +41,9 @@ class UsersController(dbService:ActorRef) extends Controller(dbService) {
 
     if (user.validate.isEmpty) Console.println("is valide = true")
     else Console.println("is valide = false")
-    return true
+    //  return true
     //val save = db.checkAndSave(user)
-  /*  val save = user.validateAndSave
-    Console.println("save = " + save)
-    return save */
+    return user.validateAndSave
   }
 
   def update(params: Map[String, Any]): Any = {
@@ -57,7 +55,8 @@ class UsersController(dbService:ActorRef) extends Controller(dbService) {
     Console.println("show params = " + params)
     val user = new Users()
     var tools = new Tools()
-    user.get(tools.getType(params.get("id")).asInstanceOf[String])
+    return user.get(tools.getType(params.get("id")).asInstanceOf[String])
+   // return user.get(params.get("id").toString)
   }
 
 

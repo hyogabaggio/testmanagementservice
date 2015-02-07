@@ -42,4 +42,5 @@ object FailureType extends Enumeration {
 
 case class Error(message: String)
 
-case class Validation(message: String)
+//case class Validation(message: String)
+case class Validation(message: Any)

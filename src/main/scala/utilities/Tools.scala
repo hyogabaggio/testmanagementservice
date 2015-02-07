@@ -91,7 +91,8 @@ class Tools {
   Sauf que le params qui vient contient une map "httpbody". Il faut d'abord l'extraire, puis le binder.
    */
   def extractHttpbodyAndBind(classInstance: AnyRef, params: Map[String, Any]): AnyRef = {
-    var mapHttpbody = getType(params.get("httpbody")).asInstanceOf[Map[String, Any]]
+  //  var mapHttpbody = getType(params.get("httpbody")).asInstanceOf[Map[String, Any]]   // TODO essayer de trouver une maniere plus "scala" de faire sa
+    var mapHttpbody = params.get("httpbody").get.asInstanceOf[Map[String, Any]]
     mapHttpbody.map(kv => bindingFromPair(kv, classInstance))
     return classInstance
   }

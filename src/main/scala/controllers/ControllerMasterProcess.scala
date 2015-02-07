@@ -7,7 +7,7 @@ import utilities.Validation
 /**
  * Created by hyoga on 31/01/2015.
  */
-class ControllerMasterProcess(dbService: ActorRef) extends Actor {
+class ControllerMasterProcess(/*dbService: ActorRef*/) extends Actor {
 
 
   var booleanResult = Option.empty[Boolean]
@@ -24,11 +24,9 @@ class ControllerMasterProcess(dbService: ActorRef) extends Actor {
 
         //on recupere les valeurs contenues dans la requete
         val params = data.asInstanceOf[Map[String, Any]]
-        //perRequest(ctx, Props(Class.forName(controller).getConstructors()(0).newInstance(dbService).asInstanceOf[Actor]), httpmap)
-        val controllerActor = context.actorOf(Props(Class.forName(controllerInstance).getConstructors()(0).newInstance(dbService).asInstanceOf[Actor]))
+        //val controllerActor = context.actorOf(Props(Class.forName(controllerInstance).getConstructors()(0).newInstance(dbService).asInstanceOf[Actor]))
+        val controllerActor = context.actorOf(Props(Class.forName(controllerInstance).newInstance.asInstanceOf[Actor]))
         controllerActor ! data
-
-        Console.println("after triggerControllerMethod  = ")
 
         context.become(waitingResponses)
       }
@@ -78,7 +76,9 @@ class ControllerMasterProcess(dbService: ActorRef) extends Actor {
       listResult = Some(listresult)
       replyIfReady
     }
-    case f: Validation => context.parent ! f
+    case f: Validation => {
+      context.parent ! f
+    }
 
     case t: Any => {
       Console.println(" waitingResponses booleanResult  = " + t) // TODO gerer ce cas after
@@ -88,10 +88,9 @@ class ControllerMasterProcess(dbService: ActorRef) extends Actor {
 
 
   def replyIfReady = {
-    Console.println("booleanResult  = " + booleanResult)
-    Console.println("booleanResult getClass = " + booleanResult.getClass)
-    Console.println("booleanResult nonEmpty = " + booleanResult.nonEmpty)
-    Console.println("listResult  = " + listResult)
+   if(booleanResult.nonEmpty) Console.println("booleanResult  = " + booleanResult)
+    if(mapResult.nonEmpty)  Console.println("mapresult = " + mapResult)
+    if(listResult.nonEmpty) Console.println("listResult  = " + listResult)
 
     if (booleanResult.nonEmpty) context.parent ! booleanResult
     else if (mapResult.nonEmpty) context.parent ! mapResult

@@ -14,7 +14,7 @@ import utilities.{Validation, Tools}
  *
  * Elle gere aussi la sécurité (authentification)
  */
-class Controller(dbService: ActorRef) extends Actor {
+class Controller() extends Actor {
 
 
   def receive = {
@@ -29,7 +29,7 @@ class Controller(dbService: ActorRef) extends Actor {
         Console.println("super  = " + super.getClass)
         val controllerInstance = this //TODO faire le test avec plusieurs controllers pour confirmer.
         //on execute la methode appelée (save, show, list, update, delete ou une action spécifique)
-        sender() ! triggerControllerMethod(controllerInstance, params) // TODO faut-il que cet appel soit via un acteur pour avoir une reponse via le context ?
+        sender() ! triggerControllerMethod(controllerInstance, params)
 
 
       }

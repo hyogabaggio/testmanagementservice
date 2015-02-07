@@ -19,7 +19,8 @@ class StringComplements(text: String) {
   def toDateTime(): DateTime = {
     val tools = new Tools
     val dateTime = tools.toDateTime(text)
-    return tools.getType(dateTime).asInstanceOf[DateTime] // TODO verifier que si getType retourne None, ça ne plantera pas
+    //return tools.getType(dateTime).asInstanceOf[DateTime] // TODO verifier que si getType retourne None, ça ne plantera pas
+    return dateTime.get // TODO verifier que si getType retourne None, ça ne plantera pas
 
   }
 

@@ -53,11 +53,23 @@ class UsersController() extends Controller() {
 
   def show(params: Map[String, Any]): Any = {
     Console.println("show params = " + params)
+    //TODO ne pas oublier le httptail pour les hasMany
 
     val user = new Users()
     //var tools = new Tools()
     return user.get(params.get("id").get.asInstanceOf[String])
     // return user.get(params.get("id").toString)
+  }
+
+
+  def list(params: Map[String, Any]): Any = {
+    Console.println("list params = " + params)
+    Console.println("list params = " + params.get("httpparams"))
+    Console.println("list params = " + params.get("httpparams").getClass)
+    //httptail,     httpdomain
+    val user = new Users()
+    return user.get(params.get("httpparams"))
+
   }
 
 

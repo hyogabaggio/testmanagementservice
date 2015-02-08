@@ -124,10 +124,18 @@ trait Domain {
   //TODO proteger l'acces à ces methodes par protected ou private
   def getById(classInstance: AnyRef, id: String): Any = {
       val db: DbOperationService = new DbOperationService
-       Console.println("classInstance getName = "+classInstance.getClass.getSimpleName)
-      db.getById(classInstance, classInstance.getClass.getSimpleName, id)
+      db.getById(classInstance, id)
   }
 
+
+  /*
+  Methode qui recherche un enregistrement via des parametres envoyés
+   */
+  //TODO proteger l'acces à ces methodes par protected ou private
+  def get(classInstance: AnyRef, params: Option[Any]): Any = {
+    val db: DbOperationService = new DbOperationService
+    db.get(classInstance, params)
+  }
 
 }
 
@@ -164,10 +172,21 @@ class DomainAnyRef(anyClass: AnyRef) {
     } else Some(new Validation(Map("Domain" -> "class.not.a.Domain")))
   }
 
+  /*
+  Methode qui initie la recuperation d'un enregistrement de domain via son Id
+   */
   def get(id: String): Any = {
     if (anyClass.isInstanceOf[Domain]) {
       val domain = anyClass.asInstanceOf[Domain]
       return domain.getById(domain, id)
+    }
+  }
+
+
+  def get(params: Option[Any]): Any = {
+    if (anyClass.isInstanceOf[Domain]) {
+      val domain = anyClass.asInstanceOf[Domain]
+      return domain.get(domain, params)
     }
   }
 }

@@ -53,14 +53,12 @@ class DbOperationService {
       }
       case _ => return dataModel.validate.get
     }
-
-
   }
 
   /*
   Methode qui recherche un enregistrement via l'id
    */
-  def getById(dataModel: AnyRef, classType: String, id: String): Any = {
+  def getById(dataModel: AnyRef, id: String): Any = {
     var redisStructure = dataModel.asInstanceOf[Domain].getSet(dataModel) get ("redisStructure")
     // On s'assure que redisStructure n'est pas nul
     //Et que la dataStructure envoyée est contenue dans la liste des dataStructure acceptées par l'appli
@@ -72,6 +70,19 @@ class DbOperationService {
     if (redisId.isInstanceOf[String] == false) redisId = dataModel.getClass.getSimpleName.toLowerCase + ":id"
 
     redisService.findByKey(redisStructure.toString, redisId.toString, id)
+  }
+
+  /*
+ Methode qui recherche un enregistrement dans un model (dataModel) via des parametres
+  */
+  def get(dataModel: AnyRef, params:Option[Any]):Any = {
+    var redisStructure = dataModel.asInstanceOf[Domain].getSet(dataModel) get ("redisStructure")
+    // On s'assure que redisStructure n'est pas nul
+    //Et que la dataStructure envoyée est contenue dans la liste des dataStructure acceptées par l'appli
+    if (redisStructure.isInstanceOf[String] == false) redisStructure = "hash"
+    else if (!new Constantes {}.datastructures.contains(redisStructure)) return new Validation(Map("Domain" -> "redisStructure.not.valid"))
+   // redisService.findByKey(redisStructure.toString, params)
+
   }
 }
 

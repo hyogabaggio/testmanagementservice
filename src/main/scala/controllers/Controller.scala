@@ -30,8 +30,6 @@ class Controller() extends Actor {
         val controllerInstance = this //TODO faire le test avec plusieurs controllers pour confirmer.
         //on execute la methode appelée (save, show, list, update, delete ou une action spécifique)
         sender() ! triggerControllerMethod(controllerInstance, params)
-
-
       }
     }
 

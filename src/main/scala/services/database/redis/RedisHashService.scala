@@ -23,13 +23,13 @@ trait RedisHashService extends RedisService {
     Console.println("idValue = " + idValue)
     val key = determineId(classId, idValue)
     val dataMapToSave = setIdToDomain(dataMap, key)
-    Console.println("dataMapToSave = " + dataMapToSave)
+   // Console.println("dataMapToSave = " + dataMapToSave)
     return redisClient.hmset(key, dataMapToSave)
   }
 
 
-  def findByKey(classType: String, id: String): Any = {
-    val key = classType.toLowerCase + ':' + id
+  def findByKey(classId: String, id: String): Any = {
+    val key = determineId(classId, Some(id.toLong))
     Console.println("key = " + key)
     val rslt = redisClient.hgetall(key)
     Console.println("rslt = " + rslt)

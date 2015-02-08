@@ -185,7 +185,7 @@ trait RoutingService extends HttpService with Actor with ControllerPerRequestCre
       val domain = extractDomainFromPath(httpRequest.uri.path)
       if (domain.isEmpty == false) {
         //ajout du domain
-        contentMap += "httpdomain" -> domain //possiblement inutile
+        contentMap += "httpdomain" -> domain
 
         //ajout du controller
         //le controller aura un nom relatif: package.nomClass= controllers.DomainController

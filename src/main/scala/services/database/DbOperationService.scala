@@ -33,20 +33,23 @@ class DbOperationService {
         // On le transforme en Map car la methode de save de Redis ne prend en argument que des Iterable
 
         val dataMap = dataModel.toMap()
-        //  Console.println("dataMap tostring= "+dataMap)
 
         //Save dans Redis
         //On recupere le type de datastructure et l'id
-        val redisStructure = dataModel.asInstanceOf[Domain].getSet(dataModel) get ("redisStructure")
-        val redisId = dataModel.asInstanceOf[Domain].getSet(dataModel) get ("redisId")
+        var redisStructure = dataModel.asInstanceOf[Domain].getSet(dataModel) get ("redisStructure")
+        var redisId = dataModel.asInstanceOf[Domain].getSet(dataModel) get ("redisId")
+
         // TODO ne pas systematiser l'utilisation de redis, peut-etre gerer un choix de bdd
 
-        // On s'assure que redisStructure et redisId ne sont pas nuls
+        // On s'assure que redisStructure et redisId ne sont pas nuls, hash etant la structure par defaut
         //Et que la dataStructure envoyée est contenue dans la liste des dataStructure acceptées par l'appli
-        if (redisId == null || redisId == "" || redisStructure == null || redisStructure == "") return new Validation(Map("Domain" -> "redisStructure.or.redisId.not.found"))
-        else if (!new Constantes {}.datastructures.contains(redisStructure)) return new Validation(Map("Domain" -> "redisStructure.not.valid"))
+        if (redisStructure.isInstanceOf[String] == false) redisStructure = "hash"
+        if (!new Constantes {}.datastructures.contains(redisStructure)) return new Validation(Map("Domain" -> "redisStructure.not.valid"))
+        if (redisId.isInstanceOf[String] == false) redisId = dataModel.getClass.getSimpleName.toLowerCase + ":id"
 
         return redisService.save(dataMap, redisStructure.toString, redisId.toString)
+        //TODO juste avant le return, ne pas oublier de lancer un autre actor pour l'arangodb
+        //TODO save dans arangodb: ne pas oublier de saver dans un noeud Context, qui contiendra tout ce qu'il ya dans le httpbody, sauf ce qu'il ya deja dans le case class
       }
       case _ => return dataModel.validate.get
     }
@@ -58,13 +61,17 @@ class DbOperationService {
   Methode qui recherche un enregistrement via l'id
    */
   def getById(dataModel: AnyRef, classType: String, id: String): Any = {
-    val redisStructure = dataModel.asInstanceOf[Domain].getSet(dataModel) get ("redisStructure")
+    var redisStructure = dataModel.asInstanceOf[Domain].getSet(dataModel) get ("redisStructure")
     // On s'assure que redisStructure n'est pas nul
     //Et que la dataStructure envoyée est contenue dans la liste des dataStructure acceptées par l'appli
-    if (redisStructure == null || redisStructure == "") return new Validation(Map("Domain" -> "redisStructure.or.redisId.not.found"))
+    if (redisStructure.isInstanceOf[String] == false) redisStructure = "hash"
     else if (!new Constantes {}.datastructures.contains(redisStructure)) return new Validation(Map("Domain" -> "redisStructure.not.valid"))
 
-    redisService.findByKey(redisStructure.toString, classType, id)
+    //on recupere aussi la structure de l'id. Par defaut elle est de la forme "users:id" pour la class Users par exemple
+    var redisId = dataModel.asInstanceOf[Domain].getSet(dataModel) get ("redisId")
+    if (redisId.isInstanceOf[String] == false) redisId = dataModel.getClass.getSimpleName.toLowerCase + ":id"
+
+    redisService.findByKey(redisStructure.toString, redisId.toString, id)
   }
 }
 

@@ -33,7 +33,7 @@ class UsersController() extends Controller() {
 
   def save(params: Map[String, Any]): Any = {
     var user: Users = new Users()
-    //on charge les elements reçus dans le case class Users
+    //on charge les elements reçus dans le case class Users afin de pouvoir juste manipuler l'objet Users
     // binding(user, mapHttpbody).asInstanceOf[Users]
     extractHttpbodyAndBind(user, params).asInstanceOf[Users]
 
@@ -53,10 +53,11 @@ class UsersController() extends Controller() {
 
   def show(params: Map[String, Any]): Any = {
     Console.println("show params = " + params)
+
     val user = new Users()
-    var tools = new Tools()
-    return user.get(tools.getType(params.get("id")).asInstanceOf[String])
-   // return user.get(params.get("id").toString)
+    //var tools = new Tools()
+    return user.get(params.get("id").get.asInstanceOf[String])
+    // return user.get(params.get("id").toString)
   }
 
 

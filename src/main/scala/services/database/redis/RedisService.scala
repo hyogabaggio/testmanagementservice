@@ -62,6 +62,23 @@ trait RedisService {
 
     }
   }
+
+
+  /*
+  Methode de recherche dans Redis via la key
+   */
+  def find(dataStructure: String, params: Option[Map[String, Any]]): Any = {
+    //recherche dans redis
+    dataStructure match {
+      case "hash" => {
+        val redisHashService: RedisHashService = RedisHashService
+
+        redisHashService.findByParams(params)
+      }
+      case _ => None
+
+    }
+  }
 }
 
 /*

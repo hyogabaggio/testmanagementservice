@@ -68,7 +68,7 @@ class UsersController() extends Controller() {
     Console.println("list params = " + params.get("httpparams").getClass)
     //httptail,     httpdomain
     val user = new Users()
-    return user.get(params.get("httpparams"))
+      user.get(params.get("httpparams"))
 
   }
 

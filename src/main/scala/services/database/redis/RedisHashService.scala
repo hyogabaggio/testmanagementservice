@@ -3,7 +3,7 @@ package services.database.redis
 
 import utilities.Tools
 
-import scala.concurrent.{Promise, Await, Future}
+import scala.concurrent.{Future}
 import scala.util.{Success, Failure}
 
 /**
@@ -19,12 +19,21 @@ trait RedisHashService extends RedisService {
    */
   def save(dataMap: Map[String, String], classId: String): Any = {
     // On incremente la table des ids afin de recuperer le nouvel id pour cet enregistrement
-    var idValue = redisClient.incr(classId)
+    val idValue = redisClient.incr(classId)
     Console.println("idValue = " + idValue)
     val key = determineId(classId, idValue)
     val dataMapToSave = setIdToDomain(dataMap, key)
-   // Console.println("dataMapToSave = " + dataMapToSave)
-    return redisClient.hmset(key, dataMapToSave)
+    // Console.println("dataMapToSave = " + dataMapToSave)
+    val saving = redisClient.hmset(key, dataMapToSave)
+
+    // After avoir enregistré dans la table principale, on lance l'enregistrement des indexes dans un Future (un autre thread, en gros, pour que cela ne bloque pas le flux principal)
+    Future {
+      val indexesList = dataMapToSave.get("index")
+      if (indexesList.get != None) {
+        saveIndexes(indexesList.get, dataMapToSave)
+      }
+    }
+    return saving
   }
 
 
@@ -34,6 +43,11 @@ trait RedisHashService extends RedisService {
     val rslt = redisClient.hgetall(key)
     Console.println("rslt = " + rslt)
     return rslt.get
+  }
+
+
+  def findByParams(params: Option[Map[String, Any]]): Any = {
+
   }
 
 
@@ -61,6 +75,26 @@ trait RedisHashService extends RedisService {
     dataMapCopy += "id" -> classId
     return dataMapCopy
   }
+
+  /*
+  Methode qui boucle sur le champ 'index' d'un model passé en parametre.
+  Pour chaque valeur trouvé, il cree un enregistrement dans une map de type Set.
+   */
+  def saveIndexes(indexesList: String, dataModel: Map[String, String]) = {
+    val dataval = dataModel
+
+    for (index <- indexesList.split(",")) {
+      val valueMap = dataval.get(index)
+      if (valueMap.get != None) {
+        val key = index + ":" + valueMap.get
+
+        redisClient.sadd(key, dataval.get("id").get)
+      }
+
+    }
+
+  }
+
 
 }
 

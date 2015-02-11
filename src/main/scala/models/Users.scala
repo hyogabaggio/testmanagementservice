@@ -64,5 +64,16 @@ case class Users(//var id: Option[Long],
   // generating fullName
   //this.fullName = this.name + this.firstname
 
+  /*
+  http://stackoverflow.com/questions/11470468/how-to-search-in-redis-for-hash-keys
+  Index:
+  Afin de pouvoir rechercher par les noms par exemple, avec redis, on maintient un index, i.e une liste repertoriant les users avec un certain nom.
+  Ex: pour un user avec nom='hyoga' et id=34, on cree une map avec l'id 'nom:hyoga' et comme valeur l'id du user: 34
+    => sadd nom:hyoga 34
+    Donc pour rechercher tous les users avec le nom 'hyoga': smembers nom:hyoga
+
+    La notation 'val index' permet d'automatiser la creation de ces indexes. S'il existe, le systeme boucle sur son contenu et pour chacune des valeurs contenues, il cree une set
+   */
+  val index = "firstname, name"
 
 }

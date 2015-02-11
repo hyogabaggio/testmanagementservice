@@ -123,8 +123,8 @@ trait Domain {
    */
   //TODO proteger l'acces à ces methodes par protected ou private
   def getById(classInstance: AnyRef, id: String): Any = {
-      val db: DbOperationService = new DbOperationService
-      db.getById(classInstance, id)
+    val db: DbOperationService = new DbOperationService
+    db.getById(classInstance, id)
   }
 
 
@@ -134,7 +134,8 @@ trait Domain {
   //TODO proteger l'acces à ces methodes par protected ou private
   def get(classInstance: AnyRef, params: Option[Any]): Any = {
     val db: DbOperationService = new DbOperationService
-    db.get(classInstance, params)
+    if (params.isInstanceOf[Option[Map[String, Any]]] == false) db.get(classInstance, None)
+    else db.get(classInstance, params.asInstanceOf[Option[Map[String, Any]]])
   }
 
 }

@@ -5,6 +5,7 @@ import models.{Users}
 import net.liftweb.json.Serialization._
 import net.liftweb.json.{NoTypeHints, Serialization}
 import services.database.DbOperationService
+import services.database.redis.RedisHashService
 import utilities.Tools
 import models.Conversions.domainToAnyRef
 
@@ -47,29 +48,55 @@ class UsersController() extends Controller() {
   }
 
   def update(params: Map[String, Any]): Any = {
+    var user: Users = new Users()
+    //on charge les elements reçus dans le case class Users afin de pouvoir juste manipuler l'objet Users
+    // binding(user, mapHttpbody).asInstanceOf[Users]
+    extractHttpbodyAndBind(user, params).asInstanceOf[Users]
 
-
+    Console.println("user = " + user)
+    return user.validateAndUpdate
   }
 
   def show(params: Map[String, Any]): Any = {
     Console.println("show params = " + params)
     //TODO ne pas oublier le httptail pour les hasMany
-
     val user = new Users()
     //var tools = new Tools()
+
+
+    // ####################################################
+
+    val redisHashService: RedisHashService = RedisHashService
+    val id = "users:" + params.get("id").get.asInstanceOf[String]
+    val rst = redisHashService.findPropertiesValues(id, "name")
+    Console.println("rst = " + rst)
+    Console.println("rst class = " + rst.getClass)
+    var   oldValues: Map[String, String] = Map()
+    for (te <- rst) {
+      Console.println("te = " + te)
+      oldValues ++ te
+      Console.println("oldValues inside = " + oldValues )
+
+    }
+    Console.println("oldValues outside = " + oldValues )
+
+
+
+
+    //##################################################
+
     return user.get(params.get("id").get.asInstanceOf[String])
     // return user.get(params.get("id").toString)
   }
 
 
   def list(params: Map[String, Any]): Any = {
-    Console.println("list params = " + params)
-    Console.println("list params = " + params.get("httpparams"))
-    Console.println("list params = " + params.get("httpparams").getClass)
+    // Console.println("list params = " + params)
+    //Console.println("list params = " + params.get("httpparams"))
+    // Console.println("list params = " + params.get("httpparams").getClass)
     //httptail,     httpdomain
     val user = new Users()
-      user.get(params.get("httpparams"))
-
+    user.get(params.get("httpparams"))
   }
 
 

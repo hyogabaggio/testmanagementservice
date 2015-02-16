@@ -45,7 +45,16 @@ trait RedisService {
       }
 
     }
+  }
 
+  def update(dataMap: Map[String, String], dataStructure: String, classId: String): Any = {
+    //Save dans redis
+    dataStructure match {
+      case "hash" => {
+        val redisHashService: RedisHashService = RedisHashService
+        return redisHashService.update(dataMap, classId)
+      }
+    }
   }
 
   /*

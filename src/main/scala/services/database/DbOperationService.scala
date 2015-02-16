@@ -55,6 +55,40 @@ class DbOperationService {
     }
   }
 
+
+  def checkAndUpdate(dataModel: AnyRef): Any = {
+    /* Validation du modele
+     La methode validate retourne une liste d'erreurs du modele
+     On ne save que si cette liste est vide
+    */
+    dataModel.validate.isEmpty match {
+      case true => {
+        // les valeurs envoyées sont bien valides, donc on transforme le Domain en Map avant de le save()
+        // On le transforme en Map car la methode de save de Redis ne prend en argument que des Iterable
+
+        val dataMap = dataModel.toMap()
+
+        //Save dans Redis
+        //On recupere le type de datastructure et l'id
+        var redisStructure = dataModel.asInstanceOf[Domain].getSet(dataModel) get ("redisStructure")
+        var redisId = dataModel.asInstanceOf[Domain].getSet(dataModel) get ("redisId")
+
+        // TODO ne pas systematiser l'utilisation de redis, peut-etre gerer un choix de bdd
+
+        // On s'assure que redisStructure et redisId ne sont pas nuls, hash etant la structure par defaut
+        //Et que la dataStructure envoyée est contenue dans la liste des dataStructure acceptées par l'appli
+        if (redisStructure.isInstanceOf[String] == false) redisStructure = "hash"
+        if (!new Constantes {}.datastructures.contains(redisStructure)) return new Validation(Map("Domain" -> "redisStructure.not.valid"))
+        if (redisId.isInstanceOf[String] == false) redisId = dataModel.getClass.getSimpleName.toLowerCase + ":id"
+
+        return redisService.update(dataMap, redisStructure.toString, redisId.toString)
+        //TODO juste avant le return, ne pas oublier de lancer un autre actor pour l'arangodb
+        //TODO save dans arangodb: ne pas oublier de saver dans un noeud Context, qui contiendra tout ce qu'il ya dans le httpbody, sauf ce qu'il ya deja dans le case class
+      }
+      case _ => return dataModel.validate.get
+    }
+  }
+
   /*
   Methode qui recherche un enregistrement via l'id
    */
@@ -75,7 +109,7 @@ class DbOperationService {
   /*
  Methode qui recherche un enregistrement dans un model (dataModel) via des parametres
   */
-  def get(dataModel: AnyRef, params:Option[Map[String, Any]]):Any = {
+  def get(dataModel: AnyRef, params: Option[Map[String, Any]]): Any = {
     var redisStructure = dataModel.asInstanceOf[Domain].getSet(dataModel) get ("redisStructure")
     // On s'assure que redisStructure n'est pas nul
     //Et que la dataStructure envoyée est contenue dans la liste des dataStructure acceptées par l'appli

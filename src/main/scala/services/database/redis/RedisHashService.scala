@@ -30,7 +30,47 @@ trait RedisHashService extends RedisService {
     Future {
       val indexesList = dataMapToSave.get("index")
       if (indexesList.get != None) {
-        saveIndexes(indexesList.get, dataMapToSave)
+        saveTableIndexes(indexesList.get, dataMapToSave)
+      }
+    }
+    return saving
+  }
+
+  def update(dataMap: Map[String, String], classId: String): Any = {
+    //on supprime les anciennes valeurs de cette table dans la table des index
+    val indexesString = dataMap.get("index")
+    if (indexesString.get != None) {
+     var   oldValues: Map[String, String] = Map()
+      for (index <- indexesString.get.split(",")){
+        val oldValue = findPropertiesValues(dataMap.get("id").get, index.trim)
+        oldValues++oldValue.get
+
+      }
+
+      Console.println("oldValues = " + oldValues)
+      Future {
+      /*  var mapToDel: Map[String, Any] = Map()
+        for (index <- indexesList;
+             value <- oldValues) {
+          mapToDel += index.trim -> value
+        }
+        Console.println("mapToDel = " + mapToDel)     */
+
+       // deleteFromTableIndexes(oldValues, dataMap.get("id").get)
+      }
+    }
+    var saving = false
+    val idValue = dataMap.get("id").get
+    if (idValue != None && redisClient.hexists(idValue, "id")) {
+      Console.println("idValue = " + idValue)
+      saving = redisClient.hmset(idValue, dataMap)
+
+      // After avoir enregistré dans la table principale, on lance l'enregistrement des indexes dans un Future (un autre thread, en gros, pour que cela ne bloque pas le flux principal)
+      Future {
+        val indexesList = dataMap.get("index")
+        if (indexesList.get != None) {
+          saveTableIndexes(indexesList.get, dataMap)
+        }
       }
     }
     return saving
@@ -80,19 +120,37 @@ trait RedisHashService extends RedisService {
   Methode qui boucle sur le champ 'index' d'un model passé en parametre.
   Pour chaque valeur trouvé, il cree un enregistrement dans une map de type Set.
    */
-  def saveIndexes(indexesList: String, dataModel: Map[String, String]) = {
-    val dataval = dataModel
-
+  def saveTableIndexes(indexesList: String, dataModel: Map[String, String]) = {
     for (index <- indexesList.split(",")) {
-      val valueMap = dataval.get(index)
+      val indextrim = index.trim
+      val valueMap = dataModel.get(indextrim)
       if (valueMap.get != None) {
-        val key = index + ":" + valueMap.get
-
-        redisClient.sadd(key, dataval.get("id").get)
+        val key = indextrim + ":" + valueMap.get
+        redisClient.sadd(key, dataModel.get("id").get)
       }
-
     }
+  }
 
+  def deleteFromTableIndexes(indexesKeyList: Map[String, Any], value: String) = {
+    for (index <- indexesKeyList) {
+      Console.println("index = " + index)
+      val key = index._1 + ":" + index._2
+      Console.println("key = " + key)
+      Console.println("value = " + value)
+      redisClient.srem(key, value)
+    }
+  }
+
+  // TODO hmget prend en compte le nombre de variables. ie, si on veut un champ, on envoie un param. Si on en veu 2, on en envoie 2. Les listes ne marchent pas.
+  def findPropertiesValues(id: String, propertyList: String): Option[Map[String, String]] = {
+
+    redisClient.hmget(id, propertyList)
+    //redisClient.hmget(id, "firstname", "username", "id")
+  }
+
+
+  def findPropertyValue(id: String, property: String): Any = {
+    redisClient.hget(id, property)
   }
 
 

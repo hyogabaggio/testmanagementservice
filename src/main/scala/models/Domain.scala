@@ -117,6 +117,11 @@ trait Domain {
     return db.checkAndSave(classInstance)
   }
 
+  def checkAndUpdate (classInstance: AnyRef): Any = {
+    val db: DbOperationService = new DbOperationService
+    return db.checkAndUpdate(classInstance)
+  }
+
 
   /*
   Methode qui recherche un enregistrement via l'ID
@@ -170,6 +175,13 @@ class DomainAnyRef(anyClass: AnyRef) {
     if (anyClass.isInstanceOf[Domain]) {
       val domain = anyClass.asInstanceOf[Domain]
       return domain.checkAndSave(domain)
+    } else Some(new Validation(Map("Domain" -> "class.not.a.Domain")))
+  }
+
+  def validateAndUpdate(): Any = {
+    if (anyClass.isInstanceOf[Domain]) {
+      val domain = anyClass.asInstanceOf[Domain]
+      return domain.checkAndUpdate(domain)
     } else Some(new Validation(Map("Domain" -> "class.not.a.Domain")))
   }
 

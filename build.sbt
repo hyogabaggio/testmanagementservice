@@ -22,7 +22,11 @@ libraryDependencies ++= {
     "org.json4s" %% "json4s-native" % "3.2.11",
     "com.github.nscala-time" %% "nscala-time" % "1.4.0",
     "org.scalatest" % "scalatest_2.11" % "2.2.1" % "test",
-    "net.debasishg" %% "redisclient" % "2.13"
+    "net.debasishg" %% "redisclient" % "2.13",
+    "org.scalikejdbc" %% "scalikejdbc" % "2.2.3",
+    "org.scalikejdbc" %% "scalikejdbc-config"  % "2.2.3",
+    "ch.qos.logback" % "logback-classic" % "1.1.2",
+    "mysql" % "mysql-connector-java" % "5.1.12"
    // "net.debasishg" %% "redisreact" % "0.7"
     //"io.spray" %% "spray-json" % "1.2.5" exclude ("org.scala-lang" , "scala-library"),
   )

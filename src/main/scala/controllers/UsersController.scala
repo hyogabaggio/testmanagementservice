@@ -18,20 +18,6 @@ class UsersController() extends Controller() {
   Actions: save, show, list, update, delete
    */
 
-  /*def receive = {
-    case data => {
-      if (data.isInstanceOf[Map[String, Any]]) {
-
-        //on recupere les valeurs contenues dans la requete
-        val params = data.asInstanceOf[Map[String, Any]]
-        //on execute la methode appelée (save, show, list, update, delete ou une action spécifique)
-        triggerControllerMethod(this, params)
-
-       // context.become(waitingResponses)
-      }
-    }
-  }    */
-
   def save(params: Map[String, Any]): Any = {
     var user: Users = new Users()
     //on charge les elements reçus dans le case class Users afin de pouvoir juste manipuler l'objet Users
@@ -74,7 +60,7 @@ class UsersController() extends Controller() {
     var   oldValues: Map[String, String] = Map()
     for (te <- rst) {
       Console.println("te = " + te)
-      oldValues ++ te
+      oldValues = oldValues ++ te
       Console.println("oldValues inside = " + oldValues )
 
     }

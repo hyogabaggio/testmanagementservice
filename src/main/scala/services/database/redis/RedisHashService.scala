@@ -44,7 +44,7 @@ trait RedisHashService extends RedisService {
     //on transforme l'id reçu au format attendu par Redis
     val key = determineId(classId, Some(dataMap.get("id").get.toLong))
     var updatedDataMap = dataMap
-    updatedDataMap += "id"->key
+    updatedDataMap += "id" -> key
 
     if (indexesString != None && indexesString.get != None) {
       for (index <- indexesString.get.split(",")) {
@@ -146,10 +146,12 @@ trait RedisHashService extends RedisService {
       val indextrim = index.trim
       val valueMap = dataModel.get(indextrim)
       val oldValueMap = oldIndexesMap.get(indextrim)
-      Console.println("valueMap = " +indextrim +" - "+ valueMap)
-      Console.println("oldValueMap = " +indextrim +" - "+ oldValueMap)
+      Console.println("valueMap = " + indextrim + " - " + valueMap)
+      Console.println("oldValueMap = " + indextrim + " - " + oldValueMap)
+      Console.println("valueMap.get = " + valueMap.get)
+      Console.println("oldValueMap.get = " + oldValueMap.get)
       // Si l'ancienne et la nouvelle valeur sont differentes
-      if (oldValueMap != None && oldValueMap.get != None && valueMap != None && valueMap.get != oldValueMap.get) {
+      if ((oldValueMap != None && oldValueMap.get != None && valueMap != None && valueMap.get != oldValueMap.get) || (oldValueMap != None && oldValueMap.get != None && valueMap == None)) {
         //on supprime l'ancien index
         val oldKey = indextrim + ":" + oldValueMap.get
         Console.println("oldKey = " + oldKey)
@@ -157,8 +159,9 @@ trait RedisHashService extends RedisService {
       }
 
       //on enregistre le nouvel index
-      //TODO on pourrait n'updater que si l'index a changé, mais on gererait pas le cas où l'index n'a jamais été créé dans le Set. Comme sa valeur ne change pas dans le model, il n'est toujours pas créé
-      if (valueMap.get != None) {
+      //TODO On gere pas le cas où l'index n'a jamais été créé dans le Set. Comme sa valeur ne change pas dans le model, il n'est toujours pas créé. Prevoir une methode de reprise, au cas où on creerait un index en cours de roite
+      if ((valueMap.get != None && valueMap.get != "" && valueMap.get != oldValueMap.get) || (valueMap.get != None && valueMap.get != "" && oldValueMap == None)) {
+        //Console.println("sadd index = "+valueMap)
         val key = indextrim + ":" + valueMap.get
         redisClient.sadd(key, dataModel.get("id").get)
       }

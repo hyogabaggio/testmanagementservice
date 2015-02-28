@@ -48,7 +48,7 @@ case class Users(//var id: Option[Long],
    */
   def checkConstraint(propertyName: String) = propertyName match {
     case "name" if name == "" || name == null => ("name" -> "users.name.not.blank.error")
-    case "firstname" if firstname == "" || firstname == null => ("firstname" -> "users.firstname.not.blank.error")
+   // case "firstname" if firstname == "" || firstname == null => ("firstname" -> "users.firstname.not.blank.error")
     case "email" if email == "" || email == null => ("email" -> "users.email.not.blank.error")
     case "password" if password == "" || password == null => ("password" -> "users.password.not.blank.error")
     case "sexe" if (!List("H", "F").contains(sexe)) => ("sexe" -> "users.sexe.not.valid.error")

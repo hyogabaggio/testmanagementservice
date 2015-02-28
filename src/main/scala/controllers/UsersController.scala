@@ -49,28 +49,6 @@ class UsersController() extends Controller() {
     val user = new Users()
     //var tools = new Tools()
 
-
-    // ####################################################
-
-    val redisHashService: RedisHashService = RedisHashService
-    val id = "users:" + params.get("id").get.asInstanceOf[String]
-    val rst = redisHashService.findPropertiesValues(id, "name")
-    Console.println("rst = " + rst)
-    Console.println("rst class = " + rst.getClass)
-    var   oldValues: Map[String, String] = Map()
-    for (te <- rst) {
-      Console.println("te = " + te)
-      oldValues = oldValues ++ te
-      Console.println("oldValues inside = " + oldValues )
-
-    }
-    Console.println("oldValues outside = " + oldValues )
-
-
-
-
-    //##################################################
-
     return user.get(params.get("id").get.asInstanceOf[String])
     // return user.get(params.get("id").toString)
   }
@@ -83,6 +61,11 @@ class UsersController() extends Controller() {
     //httptail,     httpdomain
     val user = new Users()
     user.get(params.get("httpparams"))
+  }
+
+  def delete(params: Map[String, Any]): Any = {
+    val user = new Users()
+    return user.delete(params.get("id").get.asInstanceOf[String])
   }
 
 

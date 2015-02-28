@@ -116,8 +116,29 @@ class DbOperationService {
     if (redisStructure.isInstanceOf[String] == false) redisStructure = "hash"
     else if (!new Constantes {}.datastructures.contains(redisStructure)) return new Validation(Map("Domain" -> "redisStructure.not.valid"))
     redisService.find(redisStructure.toString, params)
-
   }
+
+
+  def delete(dataModel: AnyRef, id: String): Any = {
+    var redisStructure = dataModel.asInstanceOf[Domain].getSet(dataModel) get ("redisStructure")
+    // On s'assure que redisStructure n'est pas nul
+    //Et que la dataStructure envoyée est contenue dans la liste des dataStructure acceptées par l'appli
+    if (redisStructure.isInstanceOf[String] == false) redisStructure = "hash"
+    else if (!new Constantes {}.datastructures.contains(redisStructure)) return new Validation(Map("Domain" -> "redisStructure.not.valid"))
+
+    //on recupere aussi la structure de l'id. Par defaut elle est de la forme "users:id" pour la class Users par exemple
+    var redisId = dataModel.asInstanceOf[Domain].getSet(dataModel) get ("redisId")
+    if (redisId.isInstanceOf[String] == false) redisId = dataModel.getClass.getSimpleName.toLowerCase + ":id"
+
+    /* Meme si le model reçu (dataModel) est vide, on le transforme en Map et on l'envoie en params à la methode de suppression.
+    On devra supprimer les index aussi, et comme ils sont set en dur dans le model, on les a automatiquement.
+    On pourrait les recup ici directement et les envoyer en params au lieu d'envoyer le model en entier, mais on choisit juste de faire pareil que dans les autres méthodes. Afin de faire plus de copier/coller ;-P
+    */
+    val dataMap = dataModel.toMap()
+
+    redisService.delete(dataMap, redisStructure.toString, redisId.toString, id)
+  }
+
 }
 
 

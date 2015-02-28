@@ -88,6 +88,22 @@ trait RedisService {
 
     }
   }
+
+  /*
+ Methode de recherche dans Redis via la key
+  */
+  def delete(dataMap: Map[String, String], dataStructure: String, classId: String, id: String): Any = {
+    //recherche dans redis
+    dataStructure match {
+      case "hash" => {
+        val redisHashService: RedisHashService = RedisHashService
+        redisHashService.delete(dataMap, classId, id)
+      }
+      case _ => None
+
+    }
+  }
+
 }
 
 /*

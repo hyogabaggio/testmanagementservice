@@ -11,6 +11,8 @@ class ControllerMasterProcess(/*dbService: ActorRef*/) extends Actor {
 
 
   var booleanResult = Option.empty[Boolean]
+  var integerResult = Option.empty[Int]
+  var longResult = Option.empty[Long]
   var mapResult = Option.empty[Map[String, String]]
   var listResult = Option.empty[Seq[Map[String, String]]]
 
@@ -76,23 +78,35 @@ class ControllerMasterProcess(/*dbService: ActorRef*/) extends Actor {
       listResult = Some(listresult)
       replyIfReady
     }
+    case integerresult: Int => {
+      integerResult = Some(integerresult)
+      replyIfReady
+    }
+    case longresult: Long => {
+      longResult = Some(longresult)
+      replyIfReady
+    }
     case f: Validation => {
       context.parent ! f
     }
 
     case t: Any => {
-      Console.println(" waitingResponses booleanResult  = " + t) // TODO gerer ce cas after
+      Console.println(" waitingResponses anyResult  = " + t) // TODO gerer ce cas after
       replyIfReady
     }
   }
 
 
   def replyIfReady = {
-   if(booleanResult.nonEmpty) Console.println("booleanResult  = " + booleanResult)
-    if(mapResult.nonEmpty)  Console.println("mapresult = " + mapResult)
-    if(listResult.nonEmpty) Console.println("listResult  = " + listResult)
+    if (booleanResult.nonEmpty) Console.println("booleanResult  = " + booleanResult)
+    if (mapResult.nonEmpty) Console.println("mapresult = " + mapResult)
+    if (listResult.nonEmpty) Console.println("listResult  = " + listResult)
+    if (integerResult.nonEmpty) Console.println("integerResult  = " + integerResult)
+    if (longResult.nonEmpty) Console.println("longResult  = " + longResult)
 
     if (booleanResult.nonEmpty) context.parent ! booleanResult
+    else if (integerResult.nonEmpty) context.parent ! integerResult
+    else if (longResult.nonEmpty) context.parent ! longResult
     else if (mapResult.nonEmpty) context.parent ! mapResult
     else if (listResult.nonEmpty) context.parent ! listResult
   }

@@ -37,12 +37,14 @@ trait RedisHashService extends RedisService {
   }
 
   def update(dataMap: Map[String, String], classId: String): Any = {
-    //on supprime les anciennes valeurs de cette table dans la table des index
+    //on transforme l'id reçu au format attendu par Redis
+    val key = determineId(classId, Some(dataMap.get("id").get.toLong))
+
+    //on recupere afin de supprimer les anciennes valeurs de cette table dans la table des index
     val indexesString = dataMap.get("index")
     var oldValues: Map[String, String] = Map()
 
-    //on transforme l'id reçu au format attendu par Redis
-    val key = determineId(classId, Some(dataMap.get("id").get.toLong))
+    // on copie le map reçu dans un autre map car element en parametre est toujours val, i.e immutable (inchangeable)
     var updatedDataMap = dataMap
     updatedDataMap += "id" -> key
 
@@ -51,23 +53,55 @@ trait RedisHashService extends RedisService {
         val oldValue = findPropertiesValues(updatedDataMap.get("id").get, index.trim)
         oldValues = oldValues ++ oldValue.get
       }
-      Console.println("oldValues = " + oldValues)
+      // Console.println("oldValues = " + oldValues)
     }
     var saving = false
     val idValue = updatedDataMap.get("id").get
     if (idValue != None && redisClient.hexists(idValue, "id")) {
-      Console.println("idValue = " + idValue)
+      // Console.println("idValue = " + idValue)
       saving = redisClient.hmset(idValue, updatedDataMap)
 
       // After avoir enregistré dans la table principale, on lance l'enregistrement des indexes dans un Future (un autre thread, en gros, pour que cela ne bloque pas le flux principal)
       Future {
-        val indexesList = updatedDataMap.get("index")
-        if (indexesList.get != None) {
-          updateTableIndexes(indexesList.get, updatedDataMap, oldValues)
+        if (indexesString.get != None) {
+          updateTableIndexes(indexesString.get, updatedDataMap, oldValues)
         }
       }
     }
     return saving
+  }
+
+
+  def delete(dataMap: Map[String, String], classId: String, id: String): Any = {
+    //on transforme l'id reçu au format attendu par Redis
+    val key = determineId(classId, Some(id.toLong))
+
+    //on recupere afin de supprimer les anciennes valeurs de cette table dans la table des index
+    val indexesString = dataMap.get("index")
+    var oldIndexesValues: Map[String, String] = Map()
+
+    // on copie le map reçu dans un autre map car element en parametre est toujours val, i.e immutable (inchangeable)
+    var updatedDataMap = dataMap
+    updatedDataMap += "id" -> key
+
+    if (indexesString != None && indexesString.get != None) {
+      for (index <- indexesString.get.split(",")) {
+        val oldValue = findPropertiesValues(updatedDataMap.get("id").get, index.trim)
+        oldIndexesValues = oldIndexesValues ++ oldValue.get
+      }
+      Console.println("oldIndexesValues = " + oldIndexesValues)
+    }
+
+    val rslt = redisClient.del(key)
+
+    //Deleting indexes
+    Future {
+      if (indexesString.get != None) {
+        deleteFromTableIndexes(oldIndexesValues, updatedDataMap.get("id").get)
+      }
+    }
+
+    return rslt.get
   }
 
 
@@ -125,6 +159,15 @@ trait RedisHashService extends RedisService {
     }
   }
 
+  /*
+  Suppression des index d'un model.
+  La methode reçoit en params:
+   - une map contenant les noms des index et leurs valeurs.
+      Ex: [name:Baggio, firstname:Hyoga]
+   - l'id du model
+      Ex: "users:10"
+
+   */
   def deleteFromTableIndexes(indexesKeyList: Map[String, Any], value: String) = {
     for (index <- indexesKeyList) {
       Console.println("index = " + index)

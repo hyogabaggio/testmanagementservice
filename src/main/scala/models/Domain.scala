@@ -143,6 +143,11 @@ trait Domain {
     else db.get(classInstance, params.asInstanceOf[Option[Map[String, Any]]])
   }
 
+  def delete(classInstance: AnyRef, id: String): Any = {
+    val db: DbOperationService = new DbOperationService
+    db.delete(classInstance, id)
+  }
+
 }
 
 class DomainAnyRef(anyClass: AnyRef) {
@@ -192,7 +197,7 @@ class DomainAnyRef(anyClass: AnyRef) {
     if (anyClass.isInstanceOf[Domain]) {
       val domain = anyClass.asInstanceOf[Domain]
       return domain.getById(domain, id)
-    }
+    }    else Some(new Validation(Map("Domain" -> "class.not.a.Domain")))
   }
 
 
@@ -200,8 +205,20 @@ class DomainAnyRef(anyClass: AnyRef) {
     if (anyClass.isInstanceOf[Domain]) {
       val domain = anyClass.asInstanceOf[Domain]
       return domain.get(domain, params)
-    }
+    }        else Some(new Validation(Map("Domain" -> "class.not.a.Domain")))
   }
+
+  /*
+  Methode de suppression d'un enregistrement
+   */
+
+  def delete(id: String): Any = {
+    if (anyClass.isInstanceOf[Domain]) {
+      val domain = anyClass.asInstanceOf[Domain]
+      return domain.delete(domain, id)
+    }   else Some(new Validation(Map("Domain" -> "class.not.a.Domain")))
+  }
+
 }
 
 object Conversions {

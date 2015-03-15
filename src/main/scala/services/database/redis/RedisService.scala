@@ -33,32 +33,33 @@ trait RedisService {
   Methode de save de toute entrée dans Redis.
   Des jsons sont savés.
   Le type de structure (dataStructure) est requis, afin de savoir dans quel type de table l'enregistrement aura lieu. Cette valeur est stockée dans chaque model, propriété "redisStructure".
-  Le type de classe (className) est aussi requis, afin de gerer l'incrementation des ids. Redis ne les incremente pas automatiquement, so, ces ids sont gérés dans une table à part, de type String. Avant chaque save, une entrée du genre <<id:className>> est enregistrée, Ex: 2:Users, l'id etant incrementé. Cet id sera l'id du nouvel enregistrement à faire.
+  Le type de classe (className) est aussi requis, afin de gerer l'incrementation des ids. Redis ne les incremente pas automatiquement, so, ces ids sont gérés dans une table à part, de type String. Avant chaque save, une entrée du genre <<id:className>> est enregistrée, Ex: 2:Users, l'id etant incrementé. Cet id sera l'id du nouvel enregistrement à faire. Le format de cet id est dans le model, champ 'redisId'
    */
-  def save(dataMap: Map[String, String], dataStructure: String, classId: String): Any = {
+  def save(dataMap: Map[String, String], dataStructure: String, classtype:String, classId: String): Any = {
 
     //Save dans redis
     dataStructure match {
       case "hash" => {
         val redisHashService: RedisHashService = RedisHashService
-        return redisHashService.save(dataMap, classId)
+        return redisHashService.save(dataMap, classtype, classId)
       }
 
     }
   }
 
-  def update(dataMap: Map[String, String], dataStructure: String, classId: String): Any = {
+  def update(dataMap: Map[String, String], dataStructure: String, classtype:String, classId: String): Any = {
     //Save dans redis
     dataStructure match {
       case "hash" => {
         val redisHashService: RedisHashService = RedisHashService
-        return redisHashService.update(dataMap, classId)
+        return redisHashService.update(dataMap, classtype, classId)
       }
     }
   }
 
   /*
   Methode de recherche dans Redis via la key
+  Utilisée par le show dans le controller
    */
   def findByKey(dataStructure: String, classId: String, id: String): Any = {
     //recherche dans redis
@@ -74,30 +75,28 @@ trait RedisService {
 
 
   /*
-  Methode de recherche dans Redis via la key
+  Methode de recherche dans Redis via des parametres
    */
-  def find(dataStructure: String, params: Option[Map[String, Any]]): Any = {
+  def find(dataMap: Map[String, String], classtype:String, dataStructure: String, params: Option[Map[String, Any]]): Any = {
     //recherche dans redis
     dataStructure match {
       case "hash" => {
         val redisHashService: RedisHashService = RedisHashService
-
-        redisHashService.findByParams(params)
+        redisHashService.findByParams(dataMap, classtype, params)
       }
       case _ => None
-
     }
   }
 
   /*
  Methode de recherche dans Redis via la key
   */
-  def delete(dataMap: Map[String, String], dataStructure: String, classId: String, id: String): Any = {
+  def delete(dataMap: Map[String, String], dataStructure: String, classtype:String, classId: String, id: String): Any = {
     //recherche dans redis
     dataStructure match {
       case "hash" => {
         val redisHashService: RedisHashService = RedisHashService
-        redisHashService.delete(dataMap, classId, id)
+        redisHashService.delete(dataMap, classtype, classId, id)
       }
       case _ => None
 

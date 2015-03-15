@@ -25,8 +25,9 @@ libraryDependencies ++= {
     "net.debasishg" %% "redisclient" % "2.13",
     "org.scalikejdbc" %% "scalikejdbc" % "2.2.3",
     "org.scalikejdbc" %% "scalikejdbc-config"  % "2.2.3",
-    "ch.qos.logback" % "logback-classic" % "1.1.2",
-    "mysql" % "mysql-connector-java" % "5.1.12"
+   // "ch.qos.logback" % "logback-classic" % "1.1.2",
+   // "mysql" % "mysql-connector-java" % "5.1.12",
+  "com.github.xuwei-k" %% "msgpack4z-core" % "0.1.2"
    // "net.debasishg" %% "redisreact" % "0.7"
     //"io.spray" %% "spray-json" % "1.2.5" exclude ("org.scala-lang" , "scala-library"),
   )

@@ -117,7 +117,7 @@ trait Domain {
     return db.checkAndSave(classInstance)
   }
 
-  def checkAndUpdate (classInstance: AnyRef): Any = {
+  def checkAndUpdate(classInstance: AnyRef): Any = {
     val db: DbOperationService = new DbOperationService
     return db.checkAndUpdate(classInstance)
   }
@@ -125,6 +125,7 @@ trait Domain {
 
   /*
   Methode qui recherche un enregistrement via l'ID
+  Utilisée par le show dans le controller
    */
   //TODO proteger l'acces à ces methodes par protected ou private
   def getById(classInstance: AnyRef, id: String): Any = {
@@ -132,6 +133,17 @@ trait Domain {
     db.getById(classInstance, id)
   }
 
+
+  /*
+  Methode qui recherche un enregistrement via des parametres envoyés
+  Inutilisée
+   */
+  //TODO proteger l'acces à ces methodes par protected ou private
+ /* def get(classInstance: AnyRef, params: Option[Any]): Any = {
+    val db: DbOperationService = new DbOperationService
+    if (params.isInstanceOf[Option[Map[String, Any]]] == false) db.get(classInstance, None)
+    else db.get(classInstance, params.asInstanceOf[Option[Map[String, Any]]])
+  } */
 
   /*
   Methode qui recherche un enregistrement via des parametres envoyés
@@ -197,15 +209,22 @@ class DomainAnyRef(anyClass: AnyRef) {
     if (anyClass.isInstanceOf[Domain]) {
       val domain = anyClass.asInstanceOf[Domain]
       return domain.getById(domain, id)
-    }    else Some(new Validation(Map("Domain" -> "class.not.a.Domain")))
+    } else Some(new Validation(Map("Domain" -> "class.not.a.Domain")))
   }
 
+ /*
+  def get(params: Option[Any]): Any = {
+    if (anyClass.isInstanceOf[Domain]) {
+      val domain = anyClass.asInstanceOf[Domain]
+      return domain.get(domain, params)
+    } else Some(new Validation(Map("Domain" -> "class.not.a.Domain")))
+  }  */
 
   def get(params: Option[Any]): Any = {
     if (anyClass.isInstanceOf[Domain]) {
       val domain = anyClass.asInstanceOf[Domain]
       return domain.get(domain, params)
-    }        else Some(new Validation(Map("Domain" -> "class.not.a.Domain")))
+    } else Some(new Validation(Map("Domain" -> "class.not.a.Domain")))
   }
 
   /*
@@ -216,7 +235,7 @@ class DomainAnyRef(anyClass: AnyRef) {
     if (anyClass.isInstanceOf[Domain]) {
       val domain = anyClass.asInstanceOf[Domain]
       return domain.delete(domain, id)
-    }   else Some(new Validation(Map("Domain" -> "class.not.a.Domain")))
+    } else Some(new Validation(Map("Domain" -> "class.not.a.Domain")))
   }
 
 }

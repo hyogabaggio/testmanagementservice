@@ -4,10 +4,12 @@ import akka.actor.ActorRef
 import models.{Users}
 import net.liftweb.json.Serialization._
 import net.liftweb.json.{NoTypeHints, Serialization}
+import org.joda.time.DateTime
+import org.joda.time.format.DateTimeFormat
 import services.database.DbOperationService
 import services.database.redis.RedisHashService
 import utilities.Tools
-import models.Conversions.domainToAnyRef
+import models.Conversions.domainToAnyRef //important !!!!!
 
 /**
  * Created by hyoga on 23/11/2014.
@@ -55,12 +57,11 @@ class UsersController() extends Controller() {
 
 
   def list(params: Map[String, Any]): Any = {
-    // Console.println("list params = " + params)
-    //Console.println("list params = " + params.get("httpparams"))
-    // Console.println("list params = " + params.get("httpparams").getClass)
+    Console.println("date = " + DateTime.now().toString(DateTimeFormat.forPattern("ddMMyyyyHHmmss")))
+
     //httptail,     httpdomain
     val user = new Users()
-    user.get(params.get("httpparams"))
+   user.get(params.get("httpparams"))
   }
 
   def delete(params: Map[String, Any]): Any = {

@@ -249,6 +249,7 @@ trait RedisHashService extends RedisService {
 
         return results1
       //TODO tester la concurrence de multiples requetes
+        // TODO du string est renvoyé par cette methode. Verifier que le string est du json valide chez le client
     }
   }
 

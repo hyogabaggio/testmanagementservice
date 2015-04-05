@@ -40,6 +40,10 @@ Ex: "users" => "users:11".
 
 }
 
+/*
+Ceci est en gros une simple reprise du driver scala-redis, afin d'enrichir certaines methodes et d'en rajouter d'autres.
+https://github.com/debasishg/scala-redis
+*/
 
 class RedisClientImpl(redis: RedisClient) extends IO with Protocol {
 
@@ -74,13 +78,6 @@ class RedisClientImpl(redis: RedisClient) extends IO with Protocol {
     case _ => "0".getBytes("UTF-8")
   }
 }
-
-
-/*
-Simple reprise du driver scala-redis, afin d'enrichir certaines methodes et d'en rajouter d'autres.
-https://github.com/debasishg/scala-redis
-Ne maitrise pas la plupart de ce qu'il y a ici.
- */
 
 
 /*Tranforme un RedisClient en RedisClientImpl

@@ -1,8 +1,13 @@
 package services.database.redis
 
 
+import msgpack4z.{MsgpackUnion, MsgpackArray}
+import net.liftweb.json.JsonAST.{JString, JValue}
+import net.liftweb.json.JsonParser
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
+import org.msgpack.ScalaMessagePack
+import org.msgpack.`type`.Value
 import utilities.Tools
 
 import scala.concurrent.{Future}
@@ -48,9 +53,9 @@ trait RedisHashService extends RedisService {
    */
   def saveTableIndexes(indexesList: String, dataModel: Map[String, String], classtype: String) = {
     for (index <- indexesList.split(",")) {
-    //  Console.println("index = "+index)
+      //  Console.println("index = "+index)
       val indextrim = index.trim
-     // Console.println("indextrim = "+indextrim)
+      // Console.println("indextrim = "+indextrim)
       val valueMap = dataModel.get(indextrim)
 
       if (valueMap.get != None) {
@@ -206,6 +211,10 @@ trait RedisHashService extends RedisService {
     }
   }
 
+  /*
+  Methode de show dans Redis.
+  Recupere un enregistrement via sa key
+   */
   def findByKey(classId: String, id: String): Any = {
     val key = redishelper.determineId(classId, Some(id.toLong))
     // Console.println("key = " + key)
@@ -221,6 +230,8 @@ trait RedisHashService extends RedisService {
     Les parametres à envoyer dependent du script.
   */
   def findByParams(dataMap: Map[String, String], classtype: String, params: Option[Map[String, Any]]): Any = {
+    import RedisClientExtensions.redisClientImplConversion
+
     Console.println("dataMap = " + dataMap)
     Console.println("params = " + params)
     Console.println("classtype = " + classtype)
@@ -228,14 +239,19 @@ trait RedisHashService extends RedisService {
     params match {
       case None => {
         // aucun parametre n'est envoyé
-        val results = redisClient.evalMultiSHA("98b918779157cb05703655d96611ca125ac16ec6", List(keyParam), List("-inf", "+inf", "0", "100"))
+
+        val results = redisClient.cmd("EVALSHA", Seq("8ecec8f31db9579cc33998d68d3b1da1b5ad4fd2", "1", "-inf", "+inf", "0", "100"))
         Console.println("results none= " + results)
       }
-      case _ => val results = redisClient.evalMultiSHA("5c2c9b41d9d79e429c1e9308ee698620144ac819", List(keyParam), List(params.get.getOrElse("min", "-inf"), params.get.getOrElse("max", "+inf"), params.get.getOrElse("offset", "0"), params.get.getOrElse("count", "100")))
-        Console.println("results _ = " + results)
-        //TODO gerer cmsgpack dans le fichier lua, puis tester la concurrence de multiples requetes
+      case _ =>
+        var results1 = redisClient.cmd("EVALSHA", Seq("8ecec8f31db9579cc33998d68d3b1da1b5ad4fd2", "1", keyParam, params.get.getOrElse("min", "-inf"), params.get.getOrElse("max", "+inf"), params.get.getOrElse("offset", "0"), params.get.getOrElse("count", "100")))
+        Console.println("results1 = " + results1)
+
+        return results1
+      //TODO tester la concurrence de multiples requetes
     }
   }
+
 
   def findPropertyValue(id: String, property: String): Any = {
     redisClient.hget(id, property)

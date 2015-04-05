@@ -245,6 +245,7 @@ object Conversions {
   /*Tranforme un AnyRef en DomainAnyRef
   Et permet donc d'appliquer au AnyRef les methodes de DomainAnyRef
   Ex: DomainAnyRef a une methode validate(), avec cette conversion, on peut faire AnyRef.validate()
+  => AnyRef a été Enrichi
   */
   implicit def domainToAnyRef(anyClass: AnyRef) = new DomainAnyRef(anyClass)
 

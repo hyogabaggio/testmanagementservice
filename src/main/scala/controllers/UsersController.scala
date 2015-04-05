@@ -17,7 +17,8 @@ import models.Conversions.domainToAnyRef //important !!!!!
 class UsersController() extends Controller() {
 
   /*
-  Actions: save, show, list, update, delete
+  Actions par defaut: save, show, list, update, delete
+  NB: les reponses de ces actions (donc les reponses renvoyées au client) sont gérées par la classe ControllerMasterProcess
    */
 
   def save(params: Map[String, Any]): Any = {
